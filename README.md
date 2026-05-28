@@ -1,3 +1,5 @@
+``
+
 <div align="center">
 <img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
 </div>
@@ -11,7 +13,6 @@ View your app in AI Studio: https://ai.studio/apps/af4d2eed-580e-44d4-9adc-0bf11
 ## Run Locally
 
 **Prerequisites:**  Node.js
-
 
 1. Install dependencies:
    `npm install`
