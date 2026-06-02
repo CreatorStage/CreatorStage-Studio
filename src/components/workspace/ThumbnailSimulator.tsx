@@ -3,6 +3,10 @@ import { VideoIdea } from "../../types";
 
 interface ThumbnailSimulatorProps {
   idea: VideoIdea;
+  alternativeTitles: string[];
+  onAddTitle: (title: string) => void;
+  onRemoveTitle: (index: number) => void;
+  onSetMainTitle: (title: string) => void;
 }
 
 interface UploadedThumbnail {
@@ -92,24 +96,22 @@ function LiveCard({
   );
 }
 
-export default function ThumbnailSimulator({ idea }: ThumbnailSimulatorProps) {
+export default function ThumbnailSimulator({ idea, alternativeTitles, onAddTitle, onRemoveTitle, onSetMainTitle }: ThumbnailSimulatorProps) {
   const [layout, setLayout] = useState<"desktop" | "mobile">("desktop");
   const [thumbnails, setThumbnails] = useState<UploadedThumbnail[]>([]);
-  const [customTitle, setCustomTitle] = useState("");
+  const [newTitle, setNewTitle] = useState("");
   const [selectedTitle, setSelectedTitle] = useState(idea.mainTitle || "");
   const thumbnailsRef = useRef<UploadedThumbnail[]>([]);
 
-  const titles = useMemo(() => {
-    const base = [idea.mainTitle, ...(idea.alternativeTitles || [])].filter(Boolean);
-    if (customTitle.trim()) {
-      base.push(customTitle.trim());
-    }
+  // All titles: main + alternatives (deduplicated)
+  const allTitles = useMemo(() => {
+    const base = [idea.mainTitle, ...alternativeTitles].filter(Boolean);
     return Array.from(new Set(base));
-  }, [idea.mainTitle, idea.alternativeTitles, customTitle]);
+  }, [idea.mainTitle, alternativeTitles]);
 
   useEffect(() => {
-    setSelectedTitle(idea.mainTitle || idea.alternativeTitles?.[0] || "");
-  }, [idea.id, idea.mainTitle, idea.alternativeTitles]);
+    setSelectedTitle(idea.mainTitle || alternativeTitles?.[0] || "");
+  }, [idea.id, idea.mainTitle]);
 
   useEffect(() => {
     thumbnailsRef.current = thumbnails;
@@ -144,6 +146,42 @@ export default function ThumbnailSimulator({ idea }: ThumbnailSimulatorProps) {
     });
   };
 
+  const handleAddNewTitle = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = newTitle.trim();
+    if (!trimmed) return;
+    // Don't add duplicate
+    if (allTitles.includes(trimmed)) {
+      setSelectedTitle(trimmed);
+      setNewTitle("");
+      return;
+    }
+    onAddTitle(trimmed);
+    setSelectedTitle(trimmed);
+    setNewTitle("");
+  };
+
+  const handleRemoveTitle = (title: string) => {
+    // Find the index in alternativeTitles (not allTitles since main title can't be removed)
+    const altIndex = alternativeTitles.indexOf(title);
+    if (altIndex >= 0) {
+      onRemoveTitle(altIndex);
+      // If we removed the selected title, switch to main
+      if (selectedTitle === title) {
+        setSelectedTitle(idea.mainTitle);
+      }
+    }
+  };
+
+  const handlePromoteToMain = (title: string) => {
+    if (title === idea.mainTitle) return;
+    onSetMainTitle(title);
+    setSelectedTitle(title);
+  };
+
+  const currentLimit = layout === "desktop" ? truncationLimit.desktop : truncationLimit.mobile;
+  const isTruncated = selectedTitle.length > currentLimit;
+
   const heroThumbnail = thumbnails[0];
   const secondaryThumbnails = thumbnails.slice(1);
 
@@ -173,6 +211,7 @@ export default function ThumbnailSimulator({ idea }: ThumbnailSimulatorProps) {
 
         <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6 p-7 min-w-0">
           <div className="space-y-5 min-w-0">
+            {/* Thumbnails section */}
             <div className="p-5 space-y-4">
               <div>
                 <p className="text-[10px] uppercase tracking-widest font-bold text-yt-text-disabled">Thumbnails</p>
@@ -203,46 +242,153 @@ export default function ThumbnailSimulator({ idea }: ThumbnailSimulatorProps) {
               </div>
             </div>
 
+            {/* ====== TITLES SECTION - ENHANCED ====== */}
             <div className="p-5 space-y-4">
               <div>
-                <p className="text-[10px] uppercase tracking-widest font-bold text-yt-text-disabled">Títulos</p>
-                <p className="text-sm text-yt-text-secondary font-sans">Clique em uma opção existente ou adicione uma nova variante para comparar o corte no feed.</p>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="material-icons text-yt-red text-base">title</span>
+                  <p className="text-[10px] uppercase tracking-widest font-bold text-yt-text-disabled">Laboratório de Títulos</p>
+                </div>
+                <p className="text-sm text-yt-text-secondary font-sans">
+                  Teste variantes de título e veja como ficam no feed. Todos os títulos são <strong className="text-yt-text-primary">salvos automaticamente</strong>.
+                </p>
               </div>
 
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const nextTitle = customTitle.trim();
-                  if (!nextTitle) {
-                    return;
-                  }
-                  setSelectedTitle(nextTitle);
-                  setCustomTitle("");
-                }}
-                className="flex gap-3"
-              >
-                <input value={customTitle} onChange={(e) => setCustomTitle(e.target.value)} className="studio-input flex-1 p-3" placeholder="Adicionar título extra" />
-                <button type="submit" className="yt-btn-secondary shrink-0">Adicionar</button>
+              {/* Add new title form */}
+              <form onSubmit={handleAddNewTitle} className="flex gap-2">
+                <div className="relative flex-1">
+                  <input
+                    value={newTitle}
+                    onChange={(e) => setNewTitle(e.target.value)}
+                    className="studio-input w-full py-3 px-4 pr-16 text-sm"
+                    placeholder="Escreva uma variante de título..."
+                    maxLength={120}
+                  />
+                  <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono ${newTitle.length > 70 ? "text-amber-400" : "text-yt-text-disabled"}`}>
+                    {newTitle.length}/120
+                  </span>
+                </div>
+                <button
+                  type="submit"
+                  disabled={!newTitle.trim()}
+                  className="yt-btn-secondary shrink-0 flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <span className="material-icons text-sm">add</span>
+                  Salvar
+                </button>
               </form>
 
-              <div className="flex flex-wrap gap-2">
-                {titles.map((title) => {
-                  const active = selectedTitle === title;
+              {/* Title list */}
+              <div className="space-y-2">
+                {allTitles.map((title, idx) => {
+                  const isMain = title === idea.mainTitle;
+                  const isSelected = title === selectedTitle;
+                  const charCount = title.length;
+                  const willTruncateDesktop = charCount > truncationLimit.desktop;
+                  const willTruncateMobile = charCount > truncationLimit.mobile;
+
                   return (
-                    <button
-                      key={title}
-                      type="button"
+                    <div
+                      key={`${title}-${idx}`}
                       onClick={() => setSelectedTitle(title)}
-                      className={`px-3 py-2 rounded-full text-sm border transition-colors ${active ? "border-yt-red bg-yt-red/15 text-yt-text-primary" : "border-yt-bg-overlay bg-transparent text-yt-text-secondary hover:text-yt-text-primary"}`}
+                      className={`
+                        group relative rounded-[8px] border p-3 cursor-pointer transition-all duration-200
+                        ${isSelected
+                          ? "border-yt-red bg-yt-red/[0.06] shadow-[0_0_0_1px_rgba(255,80,69,0.2)]"
+                          : "border-yt-bg-overlay bg-yt-bg-primary hover:border-yt-text-secondary hover:bg-yt-bg-elevated"
+                        }
+                      `}
                     >
-                      {title}
-                    </button>
+                      <div className="flex items-start gap-3">
+                        {/* Selection indicator */}
+                        <div className={`mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${isSelected ? "border-yt-red bg-yt-red" : "border-yt-bg-overlay"}`}>
+                          {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          {/* Title text */}
+                          <p className={`text-sm font-semibold leading-5 ${isSelected ? "text-yt-text-primary" : "text-yt-text-secondary"}`}>
+                            {title}
+                          </p>
+
+                          {/* Meta info row */}
+                          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                            {isMain && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-yt-red/15 text-yt-red text-[9px] font-bold uppercase tracking-widest rounded-full">
+                                <span className="material-icons text-[10px]">star</span>
+                                Principal
+                              </span>
+                            )}
+                            <span className={`text-[10px] font-mono ${charCount > 70 ? "text-amber-400" : "text-yt-text-disabled"}`}>
+                              {charCount} chars
+                            </span>
+                            {willTruncateDesktop && (
+                              <span className="text-[9px] font-mono text-amber-400/80 flex items-center gap-0.5">
+                                <span className="material-icons text-[10px]">warning</span>
+                                Trunca no desktop
+                              </span>
+                            )}
+                            {willTruncateMobile && !willTruncateDesktop && (
+                              <span className="text-[9px] font-mono text-amber-400/60 flex items-center gap-0.5">
+                                <span className="material-icons text-[10px]">phone_iphone</span>
+                                Trunca no mobile
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Action buttons */}
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                          {!isMain && (
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); handlePromoteToMain(title); }}
+                              className="p-1.5 rounded-md bg-transparent border-0 text-yt-text-disabled hover:text-amber-400 hover:bg-amber-400/10 cursor-pointer transition-colors"
+                              title="Definir como título principal"
+                            >
+                              <span className="material-icons text-sm">star_outline</span>
+                            </button>
+                          )}
+                          {!isMain && (
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); handleRemoveTitle(title); }}
+                              className="p-1.5 rounded-md bg-transparent border-0 text-yt-text-disabled hover:text-yt-red hover:bg-yt-red/10 cursor-pointer transition-colors"
+                              title="Remover título"
+                            >
+                              <span className="material-icons text-sm">close</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   );
                 })}
+
+                {allTitles.length <= 1 && (
+                  <div className="rounded-[8px] border border-dashed border-yt-bg-overlay px-4 py-6 text-center">
+                    <span className="material-icons text-2xl text-yt-bg-overlay block mb-2">lightbulb</span>
+                    <p className="text-[11px] text-yt-text-disabled font-sans">
+                      Adicione variantes de título acima para comparar como cada uma aparece no feed do YouTube.
+                    </p>
+                  </div>
+                )}
               </div>
+
+              {/* Stats summary */}
+              {allTitles.length > 1 && (
+                <div className="flex items-center gap-3 p-3 bg-yt-bg-primary/50 border border-yt-bg-overlay rounded-[6px]">
+                  <span className="material-icons text-sm text-yt-blue">analytics</span>
+                  <span className="text-[10px] text-yt-text-secondary font-mono uppercase tracking-wider">
+                    {allTitles.length} títulos salvos • Selecionado: <strong className="text-yt-text-primary">{selectedTitle.length} caracteres</strong>
+                    {isTruncated && <span className="text-amber-400 ml-1">• Será truncado no {layout}</span>}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
+          {/* Feed Mockup Area */}
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div>
@@ -251,7 +397,9 @@ export default function ThumbnailSimulator({ idea }: ThumbnailSimulatorProps) {
                   {layout === "desktop" ? "Visualização desktop com cards ao redor." : "Visualização mobile com cards menores e lista vertical."}
                 </p>
               </div>
-              <span className="studio-label text-yt-text-secondary">{selectedTitle.length > (layout === "desktop" ? truncationLimit.desktop : truncationLimit.mobile) ? "Título truncado" : "Título completo"}</span>
+              <span className={`studio-label ${isTruncated ? "text-amber-400" : "text-[#66bb6a]"}`}>
+                {isTruncated ? "Título truncado" : "Título completo"}
+              </span>
             </div>
 
             {layout === "desktop" ? (

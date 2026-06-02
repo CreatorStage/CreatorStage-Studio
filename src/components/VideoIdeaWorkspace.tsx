@@ -86,7 +86,7 @@ export default function VideoIdeaWorkspace({
   const [alternativeTitles, setAlternativeTitles] = useState<string[]>(idea.alternativeTitles || []);
   const [newAltTitle, setNewAltTitle] = useState("");
   const [sponsorBrand, setSponsorBrand] = useState(idea.sponsorBrand || "");
-  const [sponsorDeadline, setSponsorDeadline] = useState(idea.sponsorDeadline ? idea.sponsorDeadline.slice(0, 16) : "");
+  const [sponsorDeadline, setSponsorDeadline] = useState(idea.sponsorDeadline ? idea.sponsorDeadline.slice(0, 10) : "");
   const [sponsorTrackingUrl, setSponsorTrackingUrl] = useState(idea.sponsorTrackingUrl || "");
   const [sponsorValue, setSponsorValue] = useState(idea.sponsorValue != null ? String(idea.sponsorValue) : "");
   const [sponsorPaymentStatus, setSponsorPaymentStatus] = useState<SponsorPaymentStatus>(
@@ -131,7 +131,7 @@ export default function VideoIdeaWorkspace({
   const [promptSpeed, setPromptSpeed] = useState<number>(3); // range 1 -> 10
   const [isScrolling, setIsScrolling] = useState<boolean>(false);
   const [teleprompterFullscreen, setTeleprompterFullscreen] = useState<boolean>(false);
-  const [teleprompterTheme, setTeleprompterTheme] = useState<"dark" | "light">("dark");
+  const teleprompterFullscreenRef = useRef<HTMLDivElement>(null);
   const teleprompterScrollContainer = useRef<HTMLDivElement>(null);
   const scrollTimerRef = useRef<any>(null);
 
@@ -148,6 +148,43 @@ export default function VideoIdeaWorkspace({
     fetchScriptVersions();
   }, [idea.id]);
 
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement && teleprompterFullscreen) {
+        setTeleprompterFullscreen(false);
+      }
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, [teleprompterFullscreen]);
+
+  useEffect(() => {
+    const syncBrowserFullscreen = async () => {
+      if (teleprompterFullscreen) {
+        const target = teleprompterFullscreenRef.current;
+        if (target && document.fullscreenElement !== target && target.requestFullscreen) {
+          try {
+            await target.requestFullscreen();
+          } catch (error) {
+            console.error("Unable to enter fullscreen", error);
+          }
+        }
+        return;
+      }
+
+      if (document.fullscreenElement) {
+        try {
+          await document.exitFullscreen();
+        } catch (error) {
+          console.error("Unable to exit fullscreen", error);
+        }
+      }
+    };
+
+    void syncBrowserFullscreen();
+  }, [teleprompterFullscreen]);
+
   // Sync state if initialIdea changes
   useEffect(() => {
     setIdea(initialIdea);
@@ -162,7 +199,7 @@ export default function VideoIdeaWorkspace({
     setPublishedUrl(initialIdea.publishedUrl || "");
     setAlternativeTitles(initialIdea.alternativeTitles || []);
     setSponsorBrand(initialIdea.sponsorBrand || "");
-    setSponsorDeadline(initialIdea.sponsorDeadline ? initialIdea.sponsorDeadline.slice(0, 16) : "");
+    setSponsorDeadline(initialIdea.sponsorDeadline ? initialIdea.sponsorDeadline.slice(0, 10) : "");
     setSponsorTrackingUrl(initialIdea.sponsorTrackingUrl || "");
     setSponsorValue(initialIdea.sponsorValue != null ? String(initialIdea.sponsorValue) : "");
     setSponsorPaymentStatus((initialIdea.sponsorPaymentStatus as SponsorPaymentStatus) || "PENDING");
@@ -258,7 +295,7 @@ export default function VideoIdeaWorkspace({
 
   const handleSponsorDeadlineChange = (value: string) => {
     setSponsorDeadline(value);
-    queueOverviewSave({ sponsorDeadline: value ? `${value}:00` : undefined } as any);
+    queueOverviewSave({ sponsorDeadline: value ? `${value}T12:00:00` : undefined } as any);
   };
 
   const handleSponsorTrackingUrlChange = (value: string) => {
@@ -280,6 +317,28 @@ export default function VideoIdeaWorkspace({
     queueOverviewSave({ sponsorPaymentStatus: value });
   };
 
+  const openTeleprompterFullscreen = () => {
+    const target = teleprompterFullscreenRef.current;
+    if (target && document.fullscreenElement !== target && target.requestFullscreen) {
+      void target.requestFullscreen().catch((error) => {
+        console.error("Unable to enter fullscreen", error);
+      });
+    }
+
+    setTeleprompterFullscreen(true);
+    setMobileSidebarOpen(false);
+  };
+
+  const closeTeleprompterFullscreen = () => {
+    if (document.fullscreenElement) {
+      void document.exitFullscreen().catch((error) => {
+        console.error("Unable to exit fullscreen", error);
+      });
+    }
+
+    setTeleprompterFullscreen(false);
+  };
+
   const handleAddAltTitle = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newAltTitle.trim()) return;
@@ -293,6 +352,28 @@ export default function VideoIdeaWorkspace({
     const updated = alternativeTitles.filter((_, idx) => idx !== indexToRemove);
     setAlternativeTitles(updated);
     queueOverviewSave({ alternativeTitles: updated });
+  };
+
+  // Direct add (used by ThumbnailSimulator - no form event needed)
+  const handleAddTitleDirect = (title: string) => {
+    if (!title.trim()) return;
+    const updated = [...alternativeTitles, title.trim()];
+    setAlternativeTitles(updated);
+    queueOverviewSave({ alternativeTitles: updated });
+  };
+
+  // Promote an alternative title to be the main title (old main becomes alternative)
+  const handlePromoteToMainTitle = (newMain: string) => {
+    const oldMain = mainTitle;
+    // Set new main
+    setMainTitle(newMain);
+    // Remove the promoted title from alternatives and add the old main
+    const updatedAlts = alternativeTitles.filter((t) => t !== newMain);
+    if (oldMain.trim() && !updatedAlts.includes(oldMain)) {
+      updatedAlts.unshift(oldMain);
+    }
+    setAlternativeTitles(updatedAlts);
+    queueOverviewSave({ mainTitle: newMain, alternativeTitles: updatedAlts });
   };
 
   // --- TAB 2: REFERENCES ---
@@ -886,7 +967,7 @@ export default function VideoIdeaWorkspace({
 
     // If it contains HTML tags, process it
     if (html.includes("<") && html.includes(">")) {
-      if (teleprompterTheme === "light") {
+      if (theme === "light") {
         // In light mode: replace light text colors with dark ones inside block divs
         // Replace block div text colors (off-white variants → near-black for readability)
         html = html
@@ -914,7 +995,7 @@ export default function VideoIdeaWorkspace({
 
     // Fallback: Convert plain text / markdown to HTML
     html = html
-      .replace(/#+\s+(.*)/g, `<h2 style="font-size: 1.5em; font-weight: bold; margin: 1em 0; color: ${teleprompterTheme === "light" ? "#e0453b" : "#ff5045"};">$1</h2>`)
+      .replace(/#+\s+(.*)/g, `<h2 style="font-size: 1.5em; font-weight: bold; margin: 1em 0; color: ${theme === "light" ? "#e0453b" : "#ff5045"};">$1</h2>`)
       .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
       .replace(/\*(.*?)\*/g, "<em>$1</em>")
       .replace(/\n/g, "<br/>");
@@ -926,6 +1007,43 @@ export default function VideoIdeaWorkspace({
     html = html.replace(/\[(CTA)\]/gi, `<span style="background-color: #2ba640; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 14px; margin-right: 4px; display: inline-block;">CTA</span>`);
 
     return html;
+  };
+
+  // --- VOICE TO TEXT HANDLER ---
+  const handleVoiceTranscript = (text: string) => {
+    if (!text.trim()) return;
+
+    if (editorMode === "continuous") {
+      // In continuous mode, insert as a new paragraph into the contentEditable editor
+      const html = `<p style="color: #f1f1f1;">${text}</p>`;
+      if (editorRef.current) {
+        editorRef.current.focus();
+        document.execCommand("insertHTML", false, html);
+        handleEditorInput({ currentTarget: editorRef.current } as any);
+      } else {
+        const updated = scriptContent + html;
+        setScriptContent(updated);
+        const words = calculateWords(updated);
+        setWordCount(words);
+        setEstimatedDuration(Math.ceil(words / 2.6));
+        triggerScriptSave(updated);
+      }
+    } else {
+      // In blocks mode, create a new paragraph block with the transcribed text
+      const newBlock = {
+        id: `block-${Math.random().toString(36).substr(2, 5)}`,
+        type: "paragraph" as const,
+        html: `<p style="color: #f1f1f1;">${text}</p>`
+      };
+      const updated = [...blocks, newBlock];
+      setBlocks(updated);
+      const combined = joinBlocksToHtml(updated);
+      setScriptContent(combined);
+      const words = calculateWords(combined);
+      setWordCount(words);
+      setEstimatedDuration(Math.ceil(words / 2.6));
+      triggerScriptSave(combined);
+    }
   };
 
 
@@ -1014,7 +1132,15 @@ export default function VideoIdeaWorkspace({
             <section className="yt-card p-8 text-center text-yt-text-secondary">Nenhum canal carregado para editar a descrição.</section>
           )}
 
-          {currentTab === "simulator" && <ThumbnailSimulator idea={idea} />}
+          {currentTab === "simulator" && (
+            <ThumbnailSimulator
+              idea={idea}
+              alternativeTitles={alternativeTitles}
+              onAddTitle={handleAddTitleDirect}
+              onRemoveTitle={handleRemoveAltTitle}
+              onSetMainTitle={handlePromoteToMainTitle}
+            />
+          )}
 
           {currentTab === "references" && (
             <ReferenceManager
@@ -1074,6 +1200,7 @@ export default function VideoIdeaWorkspace({
               loadingVersions={loadingVersions}
               onCreateVersion={handleCreateScriptVersion}
               onRestoreVersion={handleRestoreScriptVersion}
+              onVoiceTranscript={handleVoiceTranscript}
             />
           )}
 
@@ -1083,13 +1210,12 @@ export default function VideoIdeaWorkspace({
               fontSize={promptFontSize}
               speed={promptSpeed}
               isScrolling={isScrolling}
-              theme={teleprompterTheme}
+              theme={theme}
               onToggleScroll={handleScreenClickToggle}
               onReset={resetAutoscrollPosition}
               onSpeedChange={setPromptSpeed}
               onFontSizeChange={setPromptFontSize}
-              onThemeToggle={() => setTeleprompterTheme(teleprompterTheme === 'dark' ? 'light' : 'dark')}
-              onFullscreenToggle={() => setTeleprompterFullscreen(true)}
+              onFullscreenToggle={openTeleprompterFullscreen}
             />
           )}
         </main>
@@ -1149,25 +1275,18 @@ export default function VideoIdeaWorkspace({
 
       {/* Fullscreen Teleprompter Overlay */}
       {teleprompterFullscreen && (
-        <div className={`fixed inset-0 z-[999] flex flex-col ${teleprompterTheme === 'dark' ? 'bg-black' : 'bg-white'}`}>
-          <div className="absolute top-6 right-10 flex gap-4 z-[1001]">
-            <button onClick={() => setTeleprompterFullscreen(false)} className="bg-red-600 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-2xl hover:bg-red-500 transition-all">
-              <span className="material-icons">close_fullscreen</span>
-            </button>
-          </div>
-
+        <div ref={teleprompterFullscreenRef} className="fixed inset-0 z-[999] flex flex-col bg-yt-bg-primary">
           <TeleprompterView
             content={scriptContent}
             fontSize={promptFontSize}
             speed={promptSpeed}
             isScrolling={isScrolling}
-            theme={teleprompterTheme}
+            theme={theme}
             onToggleScroll={handleScreenClickToggle}
             onReset={resetAutoscrollPosition}
             onSpeedChange={setPromptSpeed}
             onFontSizeChange={setPromptFontSize}
-            onThemeToggle={() => setTeleprompterTheme(teleprompterTheme === 'dark' ? 'light' : 'dark')}
-            onFullscreenToggle={() => setTeleprompterFullscreen(false)}
+            onFullscreenToggle={closeTeleprompterFullscreen}
             isFullscreen={true}
           />
         </div>

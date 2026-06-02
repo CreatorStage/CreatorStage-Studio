@@ -10,7 +10,6 @@ interface TeleprompterViewProps {
   onReset: () => void;
   onSpeedChange: (speed: number) => void;
   onFontSizeChange: (size: number) => void;
-  onThemeToggle: () => void;
   onFullscreenToggle: () => void;
   isFullscreen?: boolean;
 }
@@ -25,7 +24,6 @@ export default function TeleprompterView({
   onReset,
   onSpeedChange,
   onFontSizeChange,
-  onThemeToggle,
   onFullscreenToggle,
   isFullscreen
 }: TeleprompterViewProps) {
@@ -70,25 +68,18 @@ export default function TeleprompterView({
   };
 
   const isDark = theme === "dark";
-  const bgColor = isDark ? "bg-[#050505]" : "bg-white";
-  const textColor = isDark ? "text-[#f1f1f1]" : "text-[#111]";
-  const borderColor = isDark ? "border-[#1c1c1c]" : "border-[#e0e0e0]";
-  const controlBg = isDark ? "bg-[#111]" : "bg-[#f5f5f5]";
-  const controlBorder = isDark ? "border-[#2a2a2a]" : "border-[#e0e0e0]";
+  const bgColor = "bg-yt-bg-primary";
+  const textColor = "text-yt-text-primary";
+  const controlBg = "bg-yt-bg-surface/96";
+  const controlBorder = "border-yt-bg-overlay";
+  const dockWidth = isDark ? "w-[min(calc(100%-1rem),72rem)]" : "w-[min(calc(100%-1rem),66rem)]";
 
   return (
-    <div className={`${isFullscreen ? "fixed inset-0 z-[1000]" : "w-full"} ${bgColor} ${textColor} flex flex-col`}>
+    <div className={`${isFullscreen ? "fixed inset-0 z-[1000]" : "relative w-full h-full"} ${bgColor} ${textColor} flex flex-col`}>
       {/* ─── CONTROLS BAR ─── */}
-      <div className={`shrink-0 ${controlBg} border-b ${controlBorder} px-6 lg:px-10 py-3.5 flex flex-wrap items-center gap-5`}>
+      <div className={`fixed bottom-3 left-1/2 z-[1002] ${dockWidth} -translate-x-1/2 rounded-2xl border ${controlBg} ${controlBorder} px-4 py-3 shadow-[0_20px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl md:px-6 lg:px-8 flex flex-nowrap items-center justify-center gap-4 overflow-x-auto transition-[width] duration-200`}>
 
-        {/* Label */}
-        <div className="flex items-center gap-2 mr-2">
-          <span className="material-icons text-[#ff5045] text-base">videocam</span>
-          <span className={`text-xs font-bold uppercase tracking-wider hidden md:inline ${isDark ? "text-[#aaa]" : "text-[#888]"}`}>Teleprompter</span>
-        </div>
-
-        <span className={`w-px h-5 ${isDark ? "bg-[#2a2a2a]" : "bg-[#e0e0e0]"} hidden sm:block`} />
-
+         
         {/* Gravar / Pausar */}
         <button
           onClick={onToggleScroll}
@@ -105,69 +96,53 @@ export default function TeleprompterView({
         {/* Reset */}
         <button
           onClick={onReset}
-          className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer bg-transparent border-0 ${isDark ? "text-[#717171] hover:text-white" : "text-[#888] hover:text-[#111]"}`}
+          className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer bg-transparent border-0 text-yt-text-secondary hover:text-yt-text-primary"
         >
           <span className="material-icons text-base">restart_alt</span>
           <span className="hidden sm:inline">Reiniciar</span>
         </button>
 
-        <span className={`w-px h-5 ${isDark ? "bg-[#2a2a2a]" : "bg-[#e0e0e0]"} hidden sm:block`} />
+        <span className="w-px h-5 bg-yt-bg-overlay hidden sm:block" />
 
 
         {/* Speed */}
         <div className="flex items-center gap-3">
-          <span className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? "text-[#555]" : "text-[#aaa]"}`}>Velocidade</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-yt-text-disabled">Velocidade</span>
           <input
             type="range" min="1" max="10" step="0.5"
             value={speed}
             onChange={(e) => onSpeedChange(parseFloat(e.target.value))}
             className="w-32 accent-[#ff5045] cursor-pointer"
           />
-          <span className={`text-sm font-bold w-8 ${isDark ? "text-[#f1f1f1]" : "text-[#111]"}`}>{speed}x</span>
+          <span className="text-sm font-bold w-8 text-yt-text-primary">{speed}x</span>
         </div>
 
-        <span className={`w-px h-5 ${isDark ? "bg-[#2a2a2a]" : "bg-[#e0e0e0]"} hidden sm:block`} />
+        <span className="w-px h-5 bg-yt-bg-overlay hidden sm:block" />
 
         {/* Font Size */}
         <div className="flex items-center gap-3">
-          <span className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? "text-[#555]" : "text-[#aaa]"}`}>Tamanho</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-yt-text-disabled">Tamanho</span>
           <input
             type="range" min="28" max="96"
             value={fontSize}
             onChange={(e) => onFontSizeChange(parseInt(e.target.value))}
             className="w-32 accent-[#ff5045] cursor-pointer"
           />
-          <span className={`text-sm font-bold w-10 ${isDark ? "text-[#f1f1f1]" : "text-[#111]"}`}>{fontSize}px</span>
+          <span className="text-sm font-bold w-10 text-yt-text-primary">{fontSize}px</span>
         </div>
 
-        <span className={`w-px h-5 ${isDark ? "bg-[#2a2a2a]" : "bg-[#e0e0e0]"} hidden sm:block`} />
-
-        {/* Theme toggle */}
+        <span className="w-px h-5 bg-yt-bg-overlay hidden sm:block" />
         <button
-          onClick={onThemeToggle}
-          title={isDark ? "Modo Claro" : "Modo Escuro"}
-          className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer bg-transparent border-0 ${isDark ? "text-[#717171] hover:text-white" : "text-[#888] hover:text-[#111]"}`}
+          onClick={onFullscreenToggle}
+          className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer bg-transparent border-0 text-yt-text-secondary hover:text-yt-text-primary"
         >
-          <span className="material-icons text-base">{isDark ? "light_mode" : "dark_mode"}</span>
-          <span className="hidden sm:inline">{isDark ? "Claro" : "Escuro"}</span>
+          <span className="material-icons text-base">{isFullscreen ? "close_fullscreen" : "fullscreen"}</span>
+          <span className="hidden sm:inline">{isFullscreen ? "Reduzir" : "Tela Cheia"}</span>
         </button>
-
-        {!isFullscreen && (
-          <>
-            <span className={`w-px h-5 ${isDark ? "bg-[#2a2a2a]" : "bg-[#e0e0e0]"} hidden sm:block`} />
-            <button
-              onClick={onFullscreenToggle}
-              className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer bg-transparent border-0 ${isDark ? "text-[#717171] hover:text-white" : "text-[#888] hover:text-[#111]"}`}
-            >
-              <span className="material-icons text-base">fullscreen</span>
-              <span className="hidden sm:inline">Tela Cheia</span>
-            </button>
-          </>
-        )}
 
         {/* Recording indicator */}
         {isScrolling && (
-          <div className="ml-auto flex items-center gap-2">
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#ff5045] animate-pulse"></span>
             <span className="text-[10px] font-bold text-[#ff5045] uppercase tracking-widest">Gravando</span>
           </div>
@@ -175,7 +150,7 @@ export default function TeleprompterView({
       </div>
 
       {/* ─── FOCUS LINE ─── */}
-      <div className="relative flex-1 overflow-hidden">
+      <div className="relative flex-1 overflow-hidden pb-32 md:pb-36">
         {/* Gradient fade top */}
         <div className={`pointer-events-none absolute top-0 left-0 right-0 h-24 z-10 ${isDark ? "bg-gradient-to-b from-[#050505] to-transparent" : "bg-gradient-to-b from-white to-transparent"}`} />
 

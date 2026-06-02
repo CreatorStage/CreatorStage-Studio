@@ -296,6 +296,79 @@ body {
   font-family: 'Caveat', cursive !important;
 }
 
+/* ============================================
+   Light Mode: Script Editor Block Text Fixes
+   Override hardcoded inline dark-mode colors
+   ============================================ */
+
+/* Paragraph text: #f1f1f1 → dark */
+:root[data-theme='light'] [contenteditable] [style*="color: #f1f1f1"],
+:root[data-theme='light'] [contenteditable] [style*="color: rgb(241, 241, 241)"] {
+  color: #1a1a2e !important;
+}
+
+/* GANCHO block text: #fef2f2 → dark red tint */
+:root[data-theme='light'] [contenteditable] [style*="color: #fef2f2"],
+:root[data-theme='light'] [contenteditable] [style*="color: rgb(254, 242, 242)"] {
+  color: #450a0a !important;
+}
+
+/* GANCHO strong: #fca5a5 → deep red */
+:root[data-theme='light'] [contenteditable] [style*="color: #fca5a5"],
+:root[data-theme='light'] [contenteditable] [style*="color: rgb(252, 165, 165)"] {
+  color: #991b1b !important;
+}
+
+/* CONTEÚDO block text: #eff6ff → dark blue tint */
+:root[data-theme='light'] [contenteditable] [style*="color: #eff6ff"],
+:root[data-theme='light'] [contenteditable] [style*="color: rgb(239, 246, 255)"] {
+  color: #0c1e3a !important;
+}
+
+/* CONTEÚDO strong: #93c5fd → deep blue */
+:root[data-theme='light'] [contenteditable] [style*="color: #93c5fd"],
+:root[data-theme='light'] [contenteditable] [style*="color: rgb(147, 197, 253)"] {
+  color: #1e40af !important;
+}
+
+/* CONCLUSÃO block text: #fffbeb → dark amber tint */
+:root[data-theme='light'] [contenteditable] [style*="color: #fffbeb"],
+:root[data-theme='light'] [contenteditable] [style*="color: rgb(255, 251, 235)"] {
+  color: #451a03 !important;
+}
+
+/* CONCLUSÃO strong: #fcd34d → deep amber */
+:root[data-theme='light'] [contenteditable] [style*="color: #fcd34d"],
+:root[data-theme='light'] [contenteditable] [style*="color: rgb(252, 211, 77)"] {
+  color: #92400e !important;
+}
+
+/* CTA block text: #ecfdf5 → dark green tint */
+:root[data-theme='light'] [contenteditable] [style*="color: #ecfdf5"],
+:root[data-theme='light'] [contenteditable] [style*="color: rgb(236, 253, 245)"] {
+  color: #052e16 !important;
+}
+
+/* CTA span text: #6ee7b7 → deep green */
+:root[data-theme='light'] [contenteditable] [style*="color: #6ee7b7"],
+:root[data-theme='light'] [contenteditable] [style*="color: rgb(110, 231, 183)"] {
+  color: #065f46 !important;
+}
+
+/* Block background opacity adjustments for light mode */
+:root[data-theme='light'] [contenteditable] [style*="background-color: rgba(220, 38, 38, 0.22)"] {
+  background-color: rgba(220, 38, 38, 0.08) !important;
+}
+:root[data-theme='light'] [contenteditable] [style*="background-color: rgba(37, 99, 235, 0.22)"] {
+  background-color: rgba(37, 99, 235, 0.08) !important;
+}
+:root[data-theme='light'] [contenteditable] [style*="background-color: rgba(217, 119, 6, 0.22)"] {
+  background-color: rgba(217, 119, 6, 0.08) !important;
+}
+:root[data-theme='light'] [contenteditable] [style*="background-color: rgba(5, 150, 105, 0.22)"] {
+  background-color: rgba(5, 150, 105, 0.08) !important;
+}
+
 /* High contrast theme readability overrides for rich-editor / teleprompter */
 .teleprompter-light [style*="color: rgb(241, 241, 241)"],
 .teleprompter-light [style*="color: #f1f1f1"],

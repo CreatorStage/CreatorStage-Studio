@@ -59,7 +59,7 @@ export default function SponsorTracker({
         <div>
           <label className="block text-[10px] font-bold uppercase tracking-widest text-yt-text-secondary mb-2">Prazo de aprovação</label>
           <input
-            type="datetime-local"
+            type="date"
             value={sponsorDeadline}
             onChange={(e) => onSponsorDeadlineChange(e.target.value)}
             className="studio-input w-full p-3"

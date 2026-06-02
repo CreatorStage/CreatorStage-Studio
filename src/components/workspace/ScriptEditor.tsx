@@ -2,6 +2,7 @@ import React from "react";
 import { ScriptVersion } from "../../types";
 import { ScriptBlock } from "./scriptUtils";
 import ScriptBlockCard from "./ScriptBlockCard";
+import VoiceRecorder from "./VoiceRecorder";
 
 interface ScriptEditorProps {
   editorMode: "continuous" | "blocks";
@@ -31,6 +32,9 @@ interface ScriptEditorProps {
   onCreateVersion: () => void;
   onRestoreVersion: (versionId: string) => void;
 
+  // --- Voice to text ---
+  onVoiceTranscript: (text: string) => void;
+
   // --- Shared stats ---
   wordCount: number;
   estimatedDuration: number;
@@ -59,6 +63,7 @@ const ScriptEditor: React.FC<ScriptEditorProps> = ({
   loadingVersions,
   onCreateVersion,
   onRestoreVersion,
+  onVoiceTranscript,
   wordCount,
   estimatedDuration,
 }) => {
@@ -77,7 +82,9 @@ const ScriptEditor: React.FC<ScriptEditorProps> = ({
           </p>
         </div>
 
+        {/* Voice recorder moved to below the toolbars */}
         <div className="flex flex-wrap items-center gap-2">
+          <VoiceRecorder onTranscriptReady={onVoiceTranscript} />
           <button
             type="button"
             onClick={onCreateVersion}
@@ -91,11 +98,10 @@ const ScriptEditor: React.FC<ScriptEditorProps> = ({
             <button
               type="button"
               onClick={() => onToggleMode("blocks")}
-              className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-sm flex items-center gap-1 transition-all cursor-pointer ${
-                editorMode === "blocks"
-                  ? "bg-yt-red text-white"
-                  : "text-yt-text-secondary hover:text-yt-text-primary"
-              }`}
+              className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-sm flex items-center gap-1 transition-all cursor-pointer ${editorMode === "blocks"
+                ? "bg-yt-red text-white"
+                : "text-yt-text-secondary hover:text-yt-text-primary"
+                }`}
             >
               <span className="material-icons text-sm">dashboard</span>
               <span>Blocos de Lego 🧱</span>
@@ -103,11 +109,10 @@ const ScriptEditor: React.FC<ScriptEditorProps> = ({
             <button
               type="button"
               onClick={() => onToggleMode("continuous")}
-              className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-sm flex items-center gap-1 transition-all cursor-pointer ${
-                editorMode === "continuous"
-                  ? "bg-yt-red text-white"
-                  : "text-yt-text-secondary hover:text-yt-text-primary"
-              }`}
+              className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-sm flex items-center gap-1 transition-all cursor-pointer ${editorMode === "continuous"
+                ? "bg-yt-red text-white"
+                : "text-yt-text-secondary hover:text-yt-text-primary"
+                }`}
             >
               <span className="material-icons text-sm">edit_note</span>
               <span>Texto Contínuo 📝</span>
@@ -188,6 +193,9 @@ const ScriptEditor: React.FC<ScriptEditorProps> = ({
             >
               + Texto Comum
             </button>
+
+            <div className="w-[1px] h-4 bg-yt-bg-overlay mx-1" />
+
           </div>
 
           {/* Draggable block list */}
@@ -286,6 +294,9 @@ const ScriptEditor: React.FC<ScriptEditorProps> = ({
             >
               + CTA
             </button>
+
+            <div className="w-[1px] h-4 bg-yt-bg-overlay mx-1" />
+            <VoiceRecorder onTranscriptReady={onVoiceTranscript} />
           </div>
 
           {/* ContentEditable rich text area */}
