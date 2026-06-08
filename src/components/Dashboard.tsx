@@ -276,47 +276,48 @@ export default function Dashboard({ user, onLogout, onSelectChannel, theme, togg
               </button>
             </div>
           ) : (
-            /* Channels List in Studio Grid standard style */
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            /* Channels List in List standard style */
+            <div className="flex flex-col gap-3">
               {channels.map((channel) => (
                 <div
                   key={channel.id}
                   onClick={() => onSelectChannel(channel)}
-                  className="yt-card p-5 cursor-pointer flex flex-col justify-between group relative"
+                  className="yt-card p-4 cursor-pointer flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 group"
                 >
-                  <div>
-                    <div className="flex justify-between items-start gap-2 mb-3">
-                      <span className="text-[10px] font-medium tracking-wider uppercase text-[#ce93d8] bg-purple-900/20 py-0.5 px-2 rounded-full border border-[#ce93d8]/20">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center flex-wrap gap-2.5 mb-1">
+                      <h3 className="text-base font-semibold text-yt-text-primary group-hover:text-yt-red transition-colors truncate">
+                        {channel.name}
+                      </h3>
+                      <span className="text-[10px] font-medium tracking-wider uppercase text-[#ce93d8] bg-purple-900/20 py-0.5 px-2.5 rounded-full border border-[#ce93d8]/20 shrink-0">
                         {channel.niche || "Geral"}
                       </span>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedChannelToDelete(channel);
-                          setDeletePassword("");
-                          setDeleteError(null);
-                          setShowDeleteModal(true);
-                        }}
-                        className="p-1 text-yt-text-disabled hover:text-yt-red opacity-0 group-hover:opacity-100 transition-opacity duration-150 rounded bg-transparent border-0 cursor-pointer flex items-center justify-center"
-                        title="Excluir canal"
-                      >
-                        <span className="material-icons text-sm">delete</span>
-                      </button>
                     </div>
-
-                    <h3 className="text-base font-semibold text-yt-text-primary group-hover:text-yt-red mb-2">
-                      {channel.name}
-                    </h3>
-                    <p className="text-xs text-yt-text-secondary leading-relaxed line-clamp-3 mb-4 min-h-[48px]">
-                      Nicho configurado: {channel.niche || "Geral"}.
-                    </p>
+                    <div className="flex items-center gap-3 text-xs text-yt-text-secondary font-sans mt-1">
+                      <span>Nicho configurado: <strong>{channel.niche || "Geral"}</strong></span>
+                      <span className="text-yt-text-disabled">•</span>
+                      <span className="flex items-center gap-1 font-sans">
+                        <span className="material-icons text-yt-text-disabled text-xs mt-0.5">lightbulb_outline</span>
+                        <strong>{channel.ideasCount ?? 0}</strong> ideias salvas
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="border-t border-yt-bg-overlay pt-3 flex items-center justify-between text-xs mt-2 text-yt-text-secondary">
-                    <span className="flex items-center gap-1">
-                      <span className="material-icons text-yt-text-secondary text-sm font-medium">lightbulb_outline</span>
-                      <strong>{channel.ideasCount ?? 0}</strong> ideias salvas
-                    </span>
+                  <div className="flex items-center gap-4 shrink-0 sm:border-l sm:border-yt-bg-overlay/50 sm:pl-4 self-end sm:self-auto">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedChannelToDelete(channel);
+                        setDeletePassword("");
+                        setDeleteError(null);
+                        setShowDeleteModal(true);
+                      }}
+                      className="p-2 text-yt-text-disabled hover:text-yt-red rounded bg-transparent border-0 cursor-pointer flex items-center justify-center transition-colors"
+                      title="Excluir canal"
+                    >
+                      <span className="material-icons text-sm">delete</span>
+                    </button>
+                    
                     <span className="text-[#ff5045] group-hover:text-[#ff3f33] uppercase tracking-wider font-semibold text-[11px] flex items-center gap-0.5 transition-colors">
                       Acessar <span className="material-icons text-sm">chevron_right</span>
                     </span>

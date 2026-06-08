@@ -72,6 +72,18 @@ export interface ChannelReferenceLink {
   createdAt: string;
 }
 
+export interface SuggestedVideo {
+  id: string;
+  channelId: string;
+  title: string;
+  url: string;
+  sourceChannelName?: string;
+  sourceChannelUrl?: string;
+  views?: string;
+  thumbnailUrl?: string;
+  createdAt: string;
+}
+
 export type VideoIdeaStatus = 'IDEA' | 'RESEARCHING' | 'SCRIPTING' | 'READY_TO_RECORD' | 'RECORDED' | 'EDITING' | 'SCHEDULED' | 'PUBLISHED' | 'ARCHIVED';
 
 export interface VideoIdea {

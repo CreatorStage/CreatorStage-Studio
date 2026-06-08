@@ -1,4 +1,4 @@
-import { Channel, ChannelReferenceLink, VideoIdea, Reference, Note, VideoScript, ScriptVersion, User, Goal, UserSettings, UserSettingsResponse, UploadResponse } from "./types";
+import { Channel, ChannelReferenceLink, VideoIdea, Reference, Note, VideoScript, ScriptVersion, User, Goal, UserSettings, UserSettingsResponse, UploadResponse, SuggestedVideo } from "./types";
 
 const API_BASE = ""; // Relative URL, proxies automatically because Server and Client run on same port in full-stack setup!
 
@@ -116,6 +116,26 @@ export const api = {
     return requestJson<ChannelReferenceLink>(`${API_BASE}/api/channels/${channelId}/references`, {
       method: "POST",
       body: JSON.stringify({ title, url, note, thumbnailUrl, type }),
+    });
+  },
+
+  async getChannelSuggestions(channelId: string): Promise<SuggestedVideo[]> {
+    return requestJson<SuggestedVideo[]>(`${API_BASE}/api/channels/${channelId}/suggestions`);
+  },
+
+  async getChannelSuggestionsStatus(channelId: string): Promise<{ referenceId: string; title: string; url: string; thumbnailUrl?: string; scraped: boolean }[]> {
+    return requestJson<{ referenceId: string; title: string; url: string; thumbnailUrl?: string; scraped: boolean }[]>(`${API_BASE}/api/channels/${channelId}/suggestions/status`);
+  },
+
+  async deleteChannelSuggestion(channelId: string, videoId: string): Promise<void> {
+    return requestJson<void>(`${API_BASE}/api/channels/${channelId}/suggestions/${videoId}`, {
+      method: "DELETE",
+    });
+  },
+
+  async syncChannelSuggestions(channelId: string): Promise<{ message: string; queued: number }> {
+    return requestJson<{ message: string; queued: number }>(`${API_BASE}/api/channels/${channelId}/suggestions/sync`, {
+      method: "POST",
     });
   },
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Channel, ChannelReferenceLink, ChecklistState, ChecklistStateEntry, VideoIdea, VideoIdeaStatus, User } from "../types";
+import { Channel, ChannelReferenceLink, ChecklistState, ChecklistStateEntry, VideoIdea, VideoIdeaStatus, User, SuggestedVideo } from "../types";
 import { api } from "../api";
 import ChannelGoals from "./ChannelGoals";
 import StudioSidebar from "./shared/StudioSidebar";
@@ -43,6 +43,7 @@ const SIDEBAR_NAV_ITEMS: { key: "list" | "kanban" | "goals" | "references" | "th
   { key: "list", label: "Lista", icon: "view_list" },
   { key: "kanban", label: "Kanban", icon: "view_kanban" },
   { key: "goals", label: "Metas", icon: "flag" },
+  { key: "suggestions", label: "Sugestões", icon: "auto_awesome" },
   { key: "references", label: "Canais", icon: "link" },
   { key: "thumbnails", label: "Thumbnails", icon: "image" },
   { key: "titles", label: "Títulos", icon: "title" },
@@ -92,7 +93,7 @@ export default function ChannelView({ channel, onBack, onSelectIdea, onChannelUp
   const [ideas, setIdeas] = useState<VideoIdea[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState<"ALL" | VideoIdeaStatus>("ALL");
-  const [viewMode, setViewMode] = useState<"list" | "kanban" | "goals" | "references" | "thumbnails" | "titles" | "settings">("list");
+  const [viewMode, setViewMode] = useState<"list" | "kanban" | "goals" | "references" | "thumbnails" | "titles" | "settings" | "suggestions">("list");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [recordModalOpen, setRecordModalOpen] = useState(false);
 
@@ -117,6 +118,114 @@ export default function ChannelView({ channel, onBack, onSelectIdea, onChannelUp
   const [pendingChecklistIdeaId, setPendingChecklistIdeaId] = useState<string | null>(null);
   const [pendingChecklistStatus, setPendingChecklistStatus] = useState<VideoIdeaStatus | null>(null);
 
+  const [suggestions, setSuggestions] = useState<SuggestedVideo[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [channelStatus, setChannelStatus] = useState<{ referenceId: string; title: string; url: string; thumbnailUrl?: string; scraped: boolean }[]>([]);
+  const [showChannelStatusPanel, setShowChannelStatusPanel] = useState(false);
+  const [suggestionFilterChannel, setSuggestionFilterChannel] = useState("");
+  const [suggestionMinViews, setSuggestionMinViews] = useState("");
+  const [suggestionSort, setSuggestionSort] = useState<"views" | "default">("default");
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+
+  // Converte string de views (ex: "269K", "2.3 mi") para número para comparação
+  const parseViewCount = (views?: string): number => {
+    if (!views) return 0;
+    const v = views.toLowerCase().replace(/[\s.]/g, "").replace(",", ".");
+    if (v.includes("bi") || v.includes("b")) return parseFloat(v) * 1_000_000_000;
+    if (v.includes("mi") || v.includes("m")) return parseFloat(v) * 1_000_000;
+    if (v.includes("k")) return parseFloat(v) * 1_000;
+    return parseFloat(v) || 0;
+  };
+
+  const filteredSuggestions = useMemo(() => {
+    let result = [...suggestions];
+    if (suggestionFilterChannel) {
+      result = result.filter(v => v.sourceChannelName === suggestionFilterChannel);
+    }
+    if (suggestionMinViews) {
+      const min = parseInt(suggestionMinViews, 10);
+      result = result.filter(v => parseViewCount(v.views) >= min);
+    }
+    if (suggestionSort === "views") {
+      result.sort((a, b) => parseViewCount(b.views) - parseViewCount(a.views));
+    }
+    return result;
+  }, [suggestions, suggestionFilterChannel, suggestionMinViews, suggestionSort]);
+
+  useEffect(() => {
+    if (viewMode === "suggestions") {
+      fetchSuggestions();
+      fetchStatus();
+    }
+  }, [viewMode, channel.id]);
+
+  const fetchStatus = async () => {
+    try {
+      const data = await api.getChannelSuggestionsStatus(channel.id);
+      setChannelStatus(data);
+    } catch (err) {
+      console.error("Erro ao buscar status dos canais", err);
+    }
+  };
+
+  const fetchSuggestions = async () => {
+    setLoadingSuggestions(true);
+    try {
+      const data = await api.getChannelSuggestions(channel.id);
+      setSuggestions(data);
+    } catch (err) {
+      console.error("Erro ao buscar sugestões", err);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  };
+
+  const syncAndFetchSuggestions = async () => {
+    setLoadingSuggestions(true);
+    try {
+      // Dispara scraping em background para canais ainda não processados
+      const result = await api.syncChannelSuggestions(channel.id);
+      console.log(`Sync iniciado: ${result.queued} canais enfileirados`);
+      // Aguarda um momento para os primeiros resultados chegarem (scraping é async)
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Busca o que já foi salvo até agora
+      const data = await api.getChannelSuggestions(channel.id);
+      setSuggestions(data);
+      // Atualiza status dos canais
+      const status = await api.getChannelSuggestionsStatus(channel.id);
+      setChannelStatus(status);
+    } catch (err) {
+      console.error("Erro ao sincronizar sugestões", err);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  };
+
+  const handleCreateIdeaFromSuggestion = async (suggestion: SuggestedVideo) => {
+    try {
+      const created = await api.createIdea(
+        channel.id, 
+        suggestion.title, 
+        `Inspiração do canal: ${suggestion.sourceChannelName}\nURL: ${suggestion.url}\nVisualizações: ${suggestion.views}`, 
+        ["sugestão"]
+      );
+      setIdeas([created, ...ideas]);
+      setViewMode("list");
+    } catch (err) {
+      console.error("Erro ao criar ideia a partir de sugestão", err);
+      alert("Erro ao criar ideia");
+    }
+  };
+
+  const handleDeleteSuggestion = async (videoId: string) => {
+    try {
+      await api.deleteChannelSuggestion(channel.id, videoId);
+      setSuggestions(prev => prev.filter(v => v.id !== videoId));
+    } catch (err) {
+      console.error("Erro ao deletar sugestão", err);
+    }
+  };
+
   useEffect(() => {
     setChannelDraft(channel);
     setChecklistDraft(parseChecklistTemplates(channel.checklistTemplates));
@@ -138,6 +247,16 @@ export default function ChannelView({ channel, onBack, onSelectIdea, onChannelUp
   useEffect(() => {
     fetchIdeas();
   }, [channel.id]);
+
+  useEffect(() => {
+    const handleOutsideClick = () => {
+      setActiveMenuId(null);
+    };
+    window.addEventListener("click", handleOutsideClick);
+    return () => {
+      window.removeEventListener("click", handleOutsideClick);
+    };
+  }, []);
 
   const fetchIdeas = async () => {
     try {
@@ -740,13 +859,19 @@ export default function ChannelView({ channel, onBack, onSelectIdea, onChannelUp
 
                       return (
                         <article key={reference.id} className="flex items-center gap-4 py-5 border-b border-yt-bg-overlay/60 hover:bg-white/[0.02] transition-colors -mx-4 px-4 rounded-lg">
-                          {reference.thumbnailUrl && (
+                          {reference.thumbnailUrl ? (
                             <a href={reference.url} target="_blank" rel="noreferrer" className="shrink-0">
                               <img
                                 src={reference.thumbnailUrl}
                                 alt={channelName}
                                 className="w-[120px] h-[120px] sm:w-[136px] sm:h-[136px] rounded-full object-cover border border-yt-bg-overlay bg-black"
                               />
+                            </a>
+                          ) : (
+                            <a href={reference.url} target="_blank" rel="noreferrer" className="shrink-0">
+                              <div className="w-[120px] h-[120px] sm:w-[136px] sm:h-[136px] rounded-full bg-yt-bg-elevated border border-yt-bg-overlay flex items-center justify-center text-5xl font-bold text-yt-text-primary">
+                                {channelName.charAt(0).toUpperCase()}
+                              </div>
                             </a>
                           )}
                           <div className="flex-1 min-w-0 py-2">
@@ -814,6 +939,278 @@ export default function ChannelView({ channel, onBack, onSelectIdea, onChannelUp
                 )}
               </div>
             </section>
+          ) : viewMode === "suggestions" ? (
+            <section className="w-full min-h-[calc(100vh-220px)] p-7 lg:p-8 space-y-5 flex flex-col">
+
+              {/* ─── Cabeçalho ─── */}
+              <div className="flex flex-col gap-2">
+                <p className="studio-label text-yt-red">Inteligência Competitiva</p>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <h3 className="text-3xl font-extrabold text-yt-text-primary">Vídeos em Alta</h3>
+                  <button onClick={syncAndFetchSuggestions} disabled={loadingSuggestions} className="yt-btn-primary py-1.5 px-4 flex items-center gap-2 text-sm">
+                    <span className="material-icons text-sm">{loadingSuggestions ? "hourglass_empty" : "sync"}</span>
+                    {loadingSuggestions ? "Processando..." : "Sincronizar Canais"}
+                  </button>
+                  <button onClick={fetchSuggestions} disabled={loadingSuggestions} className="yt-btn-secondary py-1.5 px-3 flex items-center gap-2 text-sm">
+                    <span className="material-icons text-sm">refresh</span>
+                    Atualizar
+                  </button>
+                </div>
+                <p className="text-sm text-yt-text-secondary max-w-2xl font-sans">
+                  Aqui estão os vídeos mais populares extraídos dos seus canais de referência em background.
+                </p>
+              </div>
+
+              {/* ─── Painel de Status dos Canais (colapsável) ─── */}
+              {channelStatus.length > 0 && (
+                <div className="rounded-[10px] border border-yt-bg-overlay bg-yt-bg-surface overflow-hidden">
+                  <button
+                    onClick={() => setShowChannelStatusPanel(p => !p)}
+                    className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-white/[0.03] transition-colors bg-transparent border-0 cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="material-icons text-yt-text-secondary text-[18px]">info</span>
+                      <h4 className="text-sm font-bold uppercase tracking-wider text-yt-text-secondary">Status dos Canais de Referência</h4>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-3 text-xs font-bold font-sans">
+                        <span className="flex items-center gap-1.5 text-[#66bb6a]">
+                          <span className="w-2 h-2 rounded-full bg-[#66bb6a] inline-block"></span>
+                          {channelStatus.filter(c => c.scraped).length} concluídos
+                        </span>
+                        <span className="flex items-center gap-1.5 text-yt-text-disabled">
+                          <span className="w-2 h-2 rounded-full bg-yt-text-disabled inline-block"></span>
+                          {channelStatus.filter(c => !c.scraped).length} pendentes
+                        </span>
+                      </div>
+                      <span className="material-icons text-yt-text-secondary text-lg transition-transform duration-200" style={{ transform: showChannelStatusPanel ? "rotate(180deg)" : "rotate(0deg)" }}>
+                        expand_more
+                      </span>
+                    </div>
+                  </button>
+                  {showChannelStatusPanel && (
+                    <div className="px-5 pb-5 pt-1 border-t border-yt-bg-overlay">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
+                        {channelStatus.map(ch => (
+                          <div key={ch.referenceId} className={`flex items-center gap-3 px-3 py-2.5 rounded-[6px] border ${ch.scraped ? "border-[#66bb6a]/30 bg-[#66bb6a]/5" : "border-yt-bg-overlay bg-white/[0.02]"}`}>
+                            {ch.thumbnailUrl ? (
+                              <img src={ch.thumbnailUrl} alt={ch.title} className="w-8 h-8 rounded-full object-cover shrink-0 border border-yt-bg-overlay" />
+                            ) : (
+                              <div className="w-8 h-8 rounded-full bg-yt-bg-elevated border border-yt-bg-overlay flex items-center justify-center shrink-0 text-xs font-bold text-yt-text-primary">
+                                {ch.title.charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            <p className="text-sm font-semibold text-yt-text-primary truncate flex-1">{ch.title.replace(/^\[Canal\]\s*/i, '')}</p>
+                            <span className={`material-icons text-lg shrink-0 ${ch.scraped ? "text-[#66bb6a]" : "text-yt-text-disabled"}`}>
+                              {ch.scraped ? "check_circle" : "hourglass_empty"}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ─── Filtros ─── */}
+              {suggestions.length > 0 && (
+                <div className="flex items-center gap-3 flex-wrap p-4 rounded-[8px] bg-yt-bg-surface border border-yt-bg-overlay">
+                  <span className="material-icons text-yt-text-secondary text-[18px]">filter_list</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-yt-text-secondary mr-1">Filtros:</span>
+
+                  {/* Filtro por canal */}
+                  <select
+                    value={suggestionFilterChannel}
+                    onChange={e => setSuggestionFilterChannel(e.target.value)}
+                    className="studio-input py-1.5 px-3 text-xs bg-yt-bg-elevated border border-yt-bg-overlay rounded text-yt-text-primary focus:outline-none cursor-pointer font-sans"
+                  >
+                    <option value="">Todos os canais</option>
+                    {[...new Set(suggestions.map(v => v.sourceChannelName).filter(Boolean))].sort().map(name => (
+                      <option key={name} value={name!}>{name}</option>
+                    ))}
+                  </select>
+
+                  {/* Filtro por views mínimas */}
+                  <select
+                    value={suggestionMinViews}
+                    onChange={e => setSuggestionMinViews(e.target.value)}
+                    className="studio-input py-1.5 px-3 text-xs bg-yt-bg-elevated border border-yt-bg-overlay rounded text-yt-text-primary focus:outline-none cursor-pointer font-sans"
+                  >
+                    <option value="">Qualquer número de views</option>
+                    <option value="100000">+ 100 mil views</option>
+                    <option value="500000">+ 500 mil views</option>
+                    <option value="1000000">+ 1 milhão de views</option>
+                    <option value="5000000">+ 5 milhões de views</option>
+                    <option value="10000000">+ 10 milhões de views</option>
+                  </select>
+
+                  {/* Ordenação */}
+                  <select
+                    value={suggestionSort}
+                    onChange={e => setSuggestionSort(e.target.value as "views" | "default")}
+                    className="studio-input py-1.5 px-3 text-xs bg-yt-bg-elevated border border-yt-bg-overlay rounded text-yt-text-primary focus:outline-none cursor-pointer font-sans"
+                  >
+                    <option value="default">Ordem padrão</option>
+                    <option value="views">Maior número de views</option>
+                  </select>
+
+                  {/* Contador de resultados */}
+                  <span className="ml-auto text-xs text-yt-text-disabled font-sans">
+                    {filteredSuggestions.length} vídeo{filteredSuggestions.length !== 1 ? "s" : ""}
+                  </span>
+                </div>
+              )}
+
+              {/* ─── Grid de Vídeos ─── */}
+              {loadingSuggestions && suggestions.length === 0 ? (
+                <div className="text-center py-10 text-yt-text-disabled">Carregando sugestões...</div>
+              ) : suggestions.length === 0 ? (
+                <div className="border border-dashed border-yt-bg-overlay/60 rounded-[12px] bg-white/[0.01] px-6 py-10 text-center">
+                  <span className="material-icons text-4xl text-yt-text-disabled mb-4">auto_awesome</span>
+                  <h4 className="text-lg font-bold text-yt-text-primary mb-2">Nenhuma sugestão ainda</h4>
+                  <p className="text-sm text-yt-text-secondary font-sans">
+                    Adicione canais (links) na aba "Canais" e o sistema raspará automaticamente os vídeos em alta em background.
+                  </p>
+                </div>
+              ) : filteredSuggestions.length === 0 ? (
+                <div className="border border-dashed border-yt-bg-overlay/60 rounded-[12px] bg-white/[0.01] px-6 py-8 text-center">
+                  <span className="material-icons text-3xl text-yt-text-disabled mb-3">search_off</span>
+                  <p className="text-sm text-yt-text-secondary font-sans">Nenhum vídeo encontrado com os filtros selecionados.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-10">
+                  {filteredSuggestions.map(video => (
+                    <article key={video.id} className="flex flex-col w-full group relative bg-transparent border-0 shadow-none">
+                      {/* Thumbnail Container */}
+                      <div className="aspect-video w-full rounded-[12px] overflow-hidden bg-black relative cursor-pointer">
+                        {video.thumbnailUrl ? (
+                          <img
+                            src={video.thumbnailUrl}
+                            alt={video.title}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-yt-text-disabled">
+                            <span className="material-icons text-4xl">movie</span>
+                          </div>
+                        )}
+                        
+                        {/* Hover Overlay containing quick action buttons (Premium YouTube Curation Experience) */}
+                        <div className="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center gap-3 p-4 z-10">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              handleCreateIdeaFromSuggestion(video);
+                            }}
+                            className="w-11/12 max-w-[150px] bg-yt-red hover:bg-yt-red-hover text-white py-2 rounded-full text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md transform translate-y-2 group-hover:translate-y-0 duration-200 cursor-pointer border-0"
+                          >
+                            <span className="material-icons text-sm">lightbulb_outline</span>
+                            Usar Ideia
+                          </button>
+                          <a
+                            href={video.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-11/12 max-w-[150px] bg-white/15 backdrop-blur-md hover:bg-white/25 text-white py-2 rounded-full text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md transform translate-y-2 group-hover:translate-y-0 duration-200 text-center"
+                          >
+                            <span className="material-icons text-sm">play_arrow</span>
+                            Assistir
+                          </a>
+                        </div>
+                      </div>
+
+                      {/* Video Info / Metadata row */}
+                      <div className="flex gap-3 pt-3 flex-1">
+                        {/* Channel circular letter badge (looks like YouTube Channel Avatar) */}
+                        <a
+                          href={video.sourceChannelUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="w-9 h-9 rounded-full bg-yt-bg-overlay/50 border border-yt-bg-overlay/40 flex items-center justify-center text-sm font-bold text-yt-text-primary flex-shrink-0 transition-opacity hover:opacity-80"
+                          title={video.sourceChannelName}
+                        >
+                          {video.sourceChannelName?.charAt(0).toUpperCase() || "Y"}
+                        </a>
+
+                        {/* Text Details */}
+                        <div className="flex-1 min-w-0 relative">
+                          <div className="flex items-start justify-between gap-1">
+                            <a
+                              href={video.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-sm font-bold text-yt-text-primary line-clamp-2 leading-tight pr-6 hover:text-yt-blue transition-colors font-sans block"
+                              title={video.title}
+                            >
+                              {video.title}
+                            </a>
+                            
+                            {/* Three dots menu button (Action triggers dropdown) */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                setActiveMenuId(activeMenuId === video.id ? null : video.id);
+                              }}
+                              className="absolute right-0 top-0 w-7 h-7 rounded-full flex items-center justify-center text-yt-text-secondary hover:text-yt-text-primary hover:bg-yt-bg-overlay/40 cursor-pointer transition-all border-0 bg-transparent"
+                            >
+                              <span className="material-icons text-base">more_vert</span>
+                            </button>
+
+                            {/* Dropdown Menu */}
+                            {activeMenuId === video.id && (
+                              <div 
+                                className="absolute right-0 top-7 z-20 bg-yt-bg-surface border border-yt-bg-overlay rounded-lg shadow-xl py-1 w-44 text-left font-sans"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <button
+                                  onClick={() => {
+                                    handleCreateIdeaFromSuggestion(video);
+                                    setActiveMenuId(null);
+                                  }}
+                                  className="w-full px-4 py-2.5 hover:bg-yt-bg-overlay/30 text-xs font-bold text-yt-text-primary flex items-center gap-2 border-0 bg-transparent text-left cursor-pointer transition-colors"
+                                >
+                                  <span className="material-icons text-sm text-yt-red">lightbulb_outline</span>
+                                  Usar como Ideia
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    handleDeleteSuggestion(video.id);
+                                    setActiveMenuId(null);
+                                  }}
+                                  className="w-full px-4 py-2.5 hover:bg-yt-bg-overlay/30 text-xs font-bold text-yt-red flex items-center gap-2 border-0 bg-transparent text-left cursor-pointer transition-colors"
+                                >
+                                  <span className="material-icons text-sm">delete</span>
+                                  Remover
+                                </button>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Source Channel Name link */}
+                          <a
+                            href={video.sourceChannelUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-xs text-yt-text-secondary font-sans hover:text-yt-text-primary transition-colors mt-1 block font-medium truncate"
+                          >
+                            {video.sourceChannelName}
+                          </a>
+
+                          {/* Views Count / Age */}
+                          <span className="text-xs text-yt-text-secondary mt-0.5 block font-sans">
+                            {video.views}
+                          </span>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+
+            </section>
           ) : viewMode === "thumbnails" ? (
             <section className="w-full min-h-[calc(100vh-220px)] p-7 lg:p-8 space-y-8 flex flex-col">
               <div className="flex flex-col gap-2">
@@ -831,12 +1228,12 @@ export default function ChannelView({ channel, onBack, onSelectIdea, onChannelUp
                   </div>
                 ) : (
                   channelReferences.filter(r => r.type === 'THUMBNAIL').map((reference) => (
-                    <article key={reference.id} className="yt-card overflow-hidden flex flex-col group">
-                      <div className="aspect-video bg-black relative">
+                    <article key={reference.id} className="flex flex-col w-full group relative bg-transparent border-0 shadow-none">
+                      <div className="aspect-video bg-black relative rounded-[12px] overflow-hidden">
                         <img
                           src={reference.thumbnailUrl?.includes('hqdefault.jpg') ? reference.thumbnailUrl.replace('hqdefault.jpg', 'maxresdefault.jpg') : reference.thumbnailUrl}
                           alt={reference.title}
-                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
                           onError={(e) => {
                             const currentSrc = e.currentTarget.src;
                             if (currentSrc.includes('maxresdefault.jpg')) {
@@ -844,13 +1241,22 @@ export default function ChannelView({ channel, onBack, onSelectIdea, onChannelUp
                             }
                           }}
                         />
-                        <button onClick={() => handleRemoveChannelReference(reference.id)} className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/60 hover:bg-yt-red text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all border-0 cursor-pointer">
+                        <button 
+                          onClick={() => handleRemoveChannelReference(reference.id)} 
+                          className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/60 hover:bg-yt-red text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all border-0 cursor-pointer z-10"
+                        >
                           <span className="material-icons text-sm">delete</span>
                         </button>
                       </div>
-                      <div className="p-4 flex-1 flex flex-col">
-                        <h4 className="text-sm font-bold text-yt-text-primary line-clamp-2 mb-2" title={reference.title}>{reference.title}</h4>
-                        {reference.note && <p className="text-xs text-yt-text-secondary mt-auto line-clamp-2">{reference.note}</p>}
+                      <div className="pt-3 flex-1 flex flex-col">
+                        <h4 className="text-sm font-bold text-yt-text-primary line-clamp-2 mb-1 leading-tight font-sans" title={reference.title}>
+                          {reference.title}
+                        </h4>
+                        {reference.note && (
+                          <p className="text-xs text-yt-text-secondary mt-1 font-sans line-clamp-2">
+                            {reference.note}
+                          </p>
+                        )}
                       </div>
                     </article>
                   ))
@@ -874,8 +1280,8 @@ export default function ChannelView({ channel, onBack, onSelectIdea, onChannelUp
                   </div>
                 ) : (
                   channelReferences.filter(r => r.type === 'TITLE').map((reference) => (
-                    <article key={reference.id} className="yt-card p-5 flex items-start justify-between gap-4 group">
-                      <div className="min-w-0">
+                    <article key={reference.id} className="py-5 flex items-start justify-between gap-4 group border-b border-yt-bg-overlay/40 last:border-b-0 bg-transparent shadow-none">
+                      <div className="min-w-0 flex-1">
                         <h4 className="text-xl font-extrabold text-yt-text-primary break-words leading-tight">"{reference.title}"</h4>
                         {reference.note && <p className="text-sm text-yt-text-secondary mt-2 border-l-2 border-yt-bg-overlay pl-3 font-sans italic">{reference.note}</p>}
                         <div className="mt-3 flex items-center gap-3">

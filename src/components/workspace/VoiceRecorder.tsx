@@ -257,6 +257,8 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscriptReady, disabl
         setError("Permissão de microfone negada. Permita o acesso ao microfone nas configurações do navegador.");
       } else if (event.error === "no-speech") {
         setError("Nenhuma fala detectada. Tente novamente.");
+      } else if (event.error === "network") {
+        setError("Erro no reconhecimento: network. No Brave ou Chromium, a transcrição por padrão é bloqueada por privacidade. Para habilitar no Brave, ative a opção 'Use Google services for push messaging and speech recognition' (Serviços do Google para push e voz) nas configurações do navegador.");
       } else if (event.error !== "aborted") {
         setError(`Erro no reconhecimento: ${event.error}`);
       }
