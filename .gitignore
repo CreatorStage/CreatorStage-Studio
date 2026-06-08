@@ -58,3 +58,8 @@ coverage/
 .env*
 !.env.example
 vite.svg
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example

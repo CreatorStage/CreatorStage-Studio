@@ -8,7 +8,9 @@
     "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
     "start": "node dist/server.cjs",
     "clean": "rm -rf dist",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "deploy": "npm run build && wrangler deploy",
+    "preview": "npm run build && wrangler dev"
   },
   "dependencies": {
     "@google/genai": "^1.29.0",
@@ -22,6 +24,7 @@
     "sweetalert2": "^11.26.25"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.40.0",
     "@tailwindcss/vite": "^4.0.0",
     "@types/express": "^4.17.21",
     "@types/node": "^22.10.1",
@@ -34,6 +37,7 @@
     "tailwindcss": "^4.0.0",
     "tsx": "^4.19.2",
     "typescript": "~5.6.2",
-    "vite": "^6.0.0"
+    "vite": "^6.0.0",
+    "wrangler": "^4.98.0"
   }
 }
