@@ -4,7 +4,7 @@ import Dashboard from "./components/Dashboard";
 import ChannelView from "./components/ChannelView";
 import VideoIdeaWorkspace from "./components/VideoIdeaWorkspace";
 import SalesPage from "./components/SalesPage";
-import { User, Channel, VideoIdea } from "./types";
+import { User, Channel, VideoIdea, WorkspaceTab } from "./types";
 import { api, setUnauthorizedHandler } from "./api";
 
 export default function App() {
@@ -18,8 +18,8 @@ export default function App() {
     const saved = localStorage.getItem("creator_selected_idea");
     return saved ? JSON.parse(saved) : null;
   });
-  const [selectedIdeaTab, setSelectedIdeaTab] = useState<"overview" | "description" | "simulator" | "references" | "notes" | "script" | "teleprompter" | "audio">(() => {
-    return (localStorage.getItem("creator_selected_idea_tab") as any) || "overview";
+  const [selectedIdeaTab, setSelectedIdeaTab] = useState<WorkspaceTab>(() => {
+    return (localStorage.getItem("creator_selected_idea_tab") as WorkspaceTab) || "overview";
   });
   const [authMode, setAuthMode] = useState<"landing" | "login" | "signup">("landing");
 

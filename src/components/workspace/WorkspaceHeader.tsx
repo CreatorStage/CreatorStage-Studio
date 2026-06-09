@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { User, VideoIdeaStatus } from "../../types";
+import { User, VideoIdeaStatus, WorkspaceTab } from "../../types";
 import StudioSidebar from "../shared/StudioSidebar";
 
 interface WorkspaceHeaderProps {
@@ -10,9 +10,9 @@ interface WorkspaceHeaderProps {
   saveStatus: string;
   onStatusChange: (status: VideoIdeaStatus) => void;
   productionStatuses: { value: VideoIdeaStatus; label: string; badgeClass: string }[];
-  currentTab: string;
-  tabs: { id: string; label: string; icon: string }[];
-  onTabChange: (id: any) => void;
+  currentTab: WorkspaceTab;
+  tabs: { id: WorkspaceTab; label: string; icon: string }[];
+  onTabChange: (id: WorkspaceTab) => void;
   user?: User | null;
   sidebarCollapsed: boolean;
   onToggleSidebar: () => void;

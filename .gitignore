@@ -40,6 +40,7 @@ coverage/
 # Misc
 storybook-static/
 node_modules/
+.agents/
 build/
 dist/
 coverage/
@@ -58,3 +59,4 @@ coverage/
 .env*
 !.env.example
 vite.svg
+skills-lock.json

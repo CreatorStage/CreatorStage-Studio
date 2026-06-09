@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Channel, ChannelReferenceLink, ChecklistState, ChecklistStateEntry, VideoIdea, VideoIdeaStatus, User, SuggestedVideo } from "../types";
+import { Channel, ChannelReferenceLink, ChecklistState, ChecklistStateEntry, VideoIdea, VideoIdeaStatus, User, SuggestedVideo, WorkspaceTab } from "../types";
 import { api } from "../api";
 import ChannelGoals from "./ChannelGoals";
 import StudioSidebar from "./shared/StudioSidebar";
@@ -8,7 +8,7 @@ import ChecklistDialog from "./channel/ChecklistDialog";
 interface ChannelViewProps {
   channel: Channel;
   onBack: () => void;
-  onSelectIdea: (idea: VideoIdea, initialTab?: any) => void;
+  onSelectIdea: (idea: VideoIdea, initialTab?: WorkspaceTab) => void;
   onChannelUpdated?: (channel: Channel) => void;
   user?: User | null;
   onLogout?: () => void;
@@ -39,7 +39,7 @@ const KANBAN_COLUMNS: { key: VideoIdeaStatus; label: string; icon: string }[] = 
   { key: "PUBLISHED", label: "Publicado", icon: "check_circle_outline" }
 ];
 
-const SIDEBAR_NAV_ITEMS: { key: "list" | "kanban" | "goals" | "references" | "thumbnails" | "titles" | "settings"; label: string; icon: string }[] = [
+const SIDEBAR_NAV_ITEMS: { key: "list" | "kanban" | "goals" | "references" | "thumbnails" | "titles" | "settings" | "suggestions"; label: string; icon: string }[] = [
   { key: "list", label: "Lista", icon: "view_list" },
   { key: "kanban", label: "Kanban", icon: "view_kanban" },
   { key: "goals", label: "Metas", icon: "flag" },
@@ -92,8 +92,12 @@ const parseChecklistState = (raw?: string): ChecklistState => {
 export default function ChannelView({ channel, onBack, onSelectIdea, onChannelUpdated, user, onLogout, theme, toggleTheme }: ChannelViewProps) {
   const [ideas, setIdeas] = useState<VideoIdea[]>([]);
   const [loading, setLoading] = useState(true);
+  type ChannelViewTab = "list" | "kanban" | "goals" | "references" | "thumbnails" | "titles" | "settings" | "suggestions";
   const [selectedFilter, setSelectedFilter] = useState<"ALL" | VideoIdeaStatus>("ALL");
-  const [viewMode, setViewMode] = useState<"list" | "kanban" | "goals" | "references" | "thumbnails" | "titles" | "settings" | "suggestions">("list");
+  const [viewMode, setViewMode] = useState<ChannelViewTab>(() => {
+    const saved = localStorage.getItem("creator_selected_channel_tab");
+    return (saved as ChannelViewTab) || "list";
+  });
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [recordModalOpen, setRecordModalOpen] = useState(false);
 
@@ -152,8 +156,32 @@ export default function ChannelView({ channel, onBack, onSelectIdea, onChannelUp
     return result;
   }, [suggestions, suggestionFilterChannel, suggestionMinViews, suggestionSort]);
 
+  // Salva viewMode no localStorage ao mudar
   useEffect(() => {
-    if (viewMode === "suggestions") {
+    localStorage.setItem("creator_selected_channel_tab", viewMode);
+  }, [viewMode]);
+
+  // Busca detalhes atualizados do canal no mount
+  useEffect(() => {
+    const fetchLatestChannelDetails = async () => {
+      try {
+        const latestChannel = await api.getChannel(channel.id);
+        setChannelDraft(latestChannel);
+        onChannelUpdated?.(latestChannel);
+      } catch (err) {
+        console.error("Erro ao buscar dados atualizados do canal", err);
+      }
+    };
+    fetchLatestChannelDetails();
+  }, [channel.id]);
+
+  // Busca dados dinamicamente ao trocar de aba (página)
+  useEffect(() => {
+    if (viewMode === "list" || viewMode === "kanban") {
+      fetchIdeas();
+    } else if (viewMode === "references" || viewMode === "thumbnails" || viewMode === "titles") {
+      fetchChannelReferences();
+    } else if (viewMode === "suggestions") {
       fetchSuggestions();
       fetchStatus();
     }
@@ -183,15 +211,11 @@ export default function ChannelView({ channel, onBack, onSelectIdea, onChannelUp
   const syncAndFetchSuggestions = async () => {
     setLoadingSuggestions(true);
     try {
-      // Dispara scraping em background para canais ainda não processados
       const result = await api.syncChannelSuggestions(channel.id);
       console.log(`Sync iniciado: ${result.queued} canais enfileirados`);
-      // Aguarda um momento para os primeiros resultados chegarem (scraping é async)
       await new Promise(resolve => setTimeout(resolve, 3000));
-      // Busca o que já foi salvo até agora
       const data = await api.getChannelSuggestions(channel.id);
       setSuggestions(data);
-      // Atualiza status dos canais
       const status = await api.getChannelSuggestionsStatus(channel.id);
       setChannelStatus(status);
     } catch (err) {
@@ -231,22 +255,14 @@ export default function ChannelView({ channel, onBack, onSelectIdea, onChannelUp
     setChecklistDraft(parseChecklistTemplates(channel.checklistTemplates));
   }, [channel]);
 
-  useEffect(() => {
-    const fetchChannelReferences = async () => {
-      try {
-        setChannelReferences(await api.getChannelReferenceLinks(channel.id));
-      } catch (err) {
-        console.error("Erro ao buscar referências do canal", err);
-        setChannelReferences([]);
-      }
-    };
-
-    fetchChannelReferences();
-  }, [channel.id]);
-
-  useEffect(() => {
-    fetchIdeas();
-  }, [channel.id]);
+  const fetchChannelReferences = async () => {
+    try {
+      setChannelReferences(await api.getChannelReferenceLinks(channel.id));
+    } catch (err) {
+      console.error("Erro ao buscar referências do canal", err);
+      setChannelReferences([]);
+    }
+  };
 
   useEffect(() => {
     const handleOutsideClick = () => {
@@ -679,7 +695,7 @@ export default function ChannelView({ channel, onBack, onSelectIdea, onChannelUp
                   <label className="text-xs font-bold uppercase tracking-wider text-yt-text-secondary font-sans">Filtrar por:</label>
                   <select
                     value={selectedFilter}
-                    onChange={(e) => setSelectedFilter(e.target.value as any)}
+                    onChange={(e) => setSelectedFilter(e.target.value as "ALL" | VideoIdeaStatus)}
                     className="studio-input py-1.5 px-3 text-xs bg-yt-bg-surface border border-yt-bg-overlay rounded text-yt-text-primary focus:outline-none cursor-pointer font-sans"
                   >
                     <option value="ALL">Todas as etapas</option>

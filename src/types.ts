@@ -201,3 +201,5 @@ export interface AuthState {
   token: string | null;
   user: User | null;
 }
+
+export type WorkspaceTab = "overview" | "description" | "simulator" | "references" | "notes" | "script" | "teleprompter" | "audio";

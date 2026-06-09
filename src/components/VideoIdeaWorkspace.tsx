@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, Suspense } from "react";
 import { User, Channel, VideoIdea, Reference, Note, VideoIdeaStatus, ScriptVersion, SponsorPaymentStatus } from "../types";
 import { api } from "../api";
 import { swal } from "../utils/swal";
@@ -12,7 +12,8 @@ import ReferenceManager from "./workspace/ReferenceManager";
 import NoteManager from "./workspace/NoteManager"; 
 import ScriptEditor from "./workspace/ScriptEditor"; 
 import TeleprompterView from "./workspace/TeleprompterView"; 
-import AudioStudio from "./workspace/AudioStudio"; 
+
+const AudioStudio = React.lazy(() => import("./workspace/AudioStudio")); 
 
 // Types and Utils
 import {
@@ -122,8 +123,7 @@ export default function VideoIdeaWorkspace({
   const [loadingVersions, setLoadingVersions] = useState(false);
   const [wordCount, setWordCount] = useState(0);
   const [estimatedDuration, setEstimatedDuration] = useState(0);
-  const editorRef = useRef<HTMLDivElement>(null);
-  const savedEditorRangeRef = useRef<Range | null>(null);
+  const editorRef = useRef<HTMLTextAreaElement>(null);
 
   // Drag and Drop (Lego Mode) state variables
   const [editorMode, setEditorMode] = useState<"continuous" | "blocks">("blocks");
@@ -180,13 +180,45 @@ export default function VideoIdeaWorkspace({
     return () => window.removeEventListener("keydown", handleGlobalKeyDown);
   }, [idea.id]);
 
-  // Initial downloads
+  // Initial downloads and auto-refresh on tab changes
   useEffect(() => {
-    fetchReferences();
-    fetchNotes();
-    fetchScript();
-    fetchScriptVersions();
-  }, [idea.id]);
+    if (currentTab === "references") {
+      fetchReferences();
+    } else if (currentTab === "notes") {
+      fetchNotes();
+    } else if (currentTab === "script" || currentTab === "teleprompter" || currentTab === "audio") {
+      fetchScript();
+      if (currentTab === "script") {
+        fetchScriptVersions();
+      }
+    } else if (currentTab === "overview") {
+      // Re-fetch the idea details to sync with any changes made from extension
+      if (channel) {
+        api.getIdeas(channel.id).then(list => {
+          const updated = list.find(x => x.id === idea.id);
+          if (updated) {
+            setIdea(updated);
+            setMainTitle(updated.mainTitle);
+            setDescription(updated.description || "");
+            setStatus(updated.status);
+            setTagInput(updated.tags ? updated.tags.join(", ") : "");
+            setDeadline(updated.deadline ? updated.deadline.split("T")[0] : "");
+            setEvergreen(Boolean(updated.evergreen));
+            setTrend(Boolean(updated.trend));
+            setSponsored(Boolean(updated.sponsored));
+            setPublishedUrl(updated.publishedUrl || "");
+            setAlternativeTitles(updated.alternativeTitles || []);
+            setSponsorBrand(updated.sponsorBrand || "");
+            setSponsorDeadline(updated.sponsorDeadline ? updated.sponsorDeadline.slice(0, 10) : "");
+            setSponsorTrackingUrl(updated.sponsorTrackingUrl || "");
+            setSponsorValue(updated.sponsorValue != null ? String(updated.sponsorValue) : "");
+            setSponsorPaymentStatus((updated.sponsorPaymentStatus as SponsorPaymentStatus) || "PENDING");
+            if (onIdeaUpdated) onIdeaUpdated(updated);
+          }
+        }).catch(err => console.error(err));
+      }
+    }
+  }, [currentTab, idea.id]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -311,8 +343,8 @@ export default function VideoIdeaWorkspace({
   const handleDeadlineChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setDeadline(val);
-    const apiDeadline = val ? `${val}T12:00:00` : null;
-    queueOverviewSave({ deadline: apiDeadline } as any);
+    const apiDeadline = val ? `${val}T12:00:00` : undefined;
+    queueOverviewSave({ deadline: apiDeadline });
   };
 
   const handleFlagChange = (field: "evergreen" | "trend" | "sponsored", value: boolean) => {
@@ -335,7 +367,7 @@ export default function VideoIdeaWorkspace({
 
   const handleSponsorDeadlineChange = (value: string) => {
     setSponsorDeadline(value);
-    queueOverviewSave({ sponsorDeadline: value ? `${value}T12:00:00` : undefined } as any);
+    queueOverviewSave({ sponsorDeadline: value ? `${value}T12:00:00` : undefined });
   };
 
   const handleSponsorTrackingUrlChange = (value: string) => {
@@ -349,7 +381,7 @@ export default function VideoIdeaWorkspace({
     if (parsed !== undefined && Number.isNaN(parsed)) {
       return;
     }
-    queueOverviewSave({ sponsorValue: parsed } as any);
+    queueOverviewSave({ sponsorValue: parsed });
   };
 
   const handleSponsorPaymentStatusChange = (value: SponsorPaymentStatus) => {
@@ -537,10 +569,6 @@ export default function VideoIdeaWorkspace({
       const words = calculateWords(content);
       setWordCount(words);
       setEstimatedDuration(Math.ceil(words / 2.6)); // words / 2.6 = seconds
-
-      if (editorRef.current) {
-        editorRef.current.innerHTML = content;
-      }
     } catch (err) {
       console.error(err);
     }
@@ -585,9 +613,6 @@ export default function VideoIdeaWorkspace({
       const words = calculateWords(content);
       setWordCount(words);
       setEstimatedDuration(Math.ceil(words / 2.6));
-      if (editorRef.current) {
-        editorRef.current.innerHTML = content;
-      }
       await fetchScriptVersions();
       triggerSaveState("Salvo");
     } catch (err) {
@@ -614,71 +639,7 @@ export default function VideoIdeaWorkspace({
     return clean.split(" ").length;
   };
 
-  // Keep a hook sync to fill the contenteditable if it renders later (only in continuous mode)
-  useEffect(() => {
-    if (currentTab === "script" && editorMode === "continuous" && editorRef.current) {
-      if (document.activeElement !== editorRef.current && editorRef.current.innerHTML !== scriptContent) {
-        editorRef.current.innerHTML = scriptContent;
-      }
-    }
-  }, [currentTab, scriptContent, editorMode]);
-
-  const executeCommand = (command: string, value: string = "") => {
-    document.execCommand(command, false, value);
-    if (editorRef.current) {
-      editorRef.current.focus();
-      handleEditorInput({ currentTarget: editorRef.current } as any);
-    }
-  };
-
-  // Apply font size to selected text in the continuous editor using Range API
-  const applyFontSize = (sizePx: number) => {
-    const editor = editorRef.current;
-    if (!editor) return;
-
-    const sel = window.getSelection();
-    let range: Range | null = null;
-
-    if (sel && sel.rangeCount > 0 && !sel.getRangeAt(0).collapsed) {
-      range = sel.getRangeAt(0);
-    } else if (savedEditorRangeRef.current && !savedEditorRangeRef.current.collapsed) {
-      if (sel) {
-        sel.removeAllRanges();
-        sel.addRange(savedEditorRangeRef.current);
-      }
-      range = savedEditorRangeRef.current;
-    }
-
-    if (!range || range.collapsed) {
-      // Nothing selected — apply font size to entire editor content
-      const currentHTML = editor.innerHTML;
-      editor.innerHTML = `<span style="font-size: ${sizePx}px">${currentHTML}</span>`;
-      setScriptContent(editor.innerHTML);
-      triggerScriptSave(editor.innerHTML);
-      savedEditorRangeRef.current = null;
-      return;
-    }
-
-    try {
-      const fragment = range.extractContents();
-      const span = document.createElement('span');
-      span.style.fontSize = `${sizePx}px`;
-      span.appendChild(fragment);
-      range.insertNode(span);
-      if (sel) sel.removeAllRanges();
-    } catch {
-      const currentHTML = editor.innerHTML;
-      editor.innerHTML = `<span style="font-size: ${sizePx}px">${currentHTML}</span>`;
-    }
-
-    setScriptContent(editor.innerHTML);
-    triggerScriptSave(editor.innerHTML);
-    savedEditorRangeRef.current = null;
-  };
-
-  const handleEditorInput = (e: React.FormEvent<HTMLDivElement> | React.ChangeEvent<HTMLTextAreaElement>) => {
-    const target = e.currentTarget as any;
-    const val = 'value' in target ? target.value : target.innerHTML;
+  const handleEditorContentChange = (val: string) => {
     setScriptContent(val);
     const words = calculateWords(val);
     setWordCount(words);
@@ -693,42 +654,6 @@ export default function VideoIdeaWorkspace({
     scriptTimeoutRef.current = setTimeout(() => {
       executeScriptSave(val);
     }, 300000); // 5 minutos
-  };
-
-  const insertQuickBlock = (blockType: "hook" | "dev" | "final" | "cta") => {
-    const htmlBlocks: Record<string, string> = {
-      hook: `<div style="background-color: rgba(220, 38, 38, 0.22); border-left: 4px solid #ef4444; padding: 12px 16px; margin: 12px 0; border-radius: 4px; font-family: 'Montserrat', sans-serif; color: #fef2f2;">
-               <span contenteditable="false" style="background-color: #dc2626; color: white; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; margin-right: 8px; display: inline-block; letter-spacing: 0.05em; user-select: none;">GANCHO</span>
-               <strong style="color: #fca5a5;">Insira seu gancho de atenção aqui!</strong> Desperte a curiosidade do espectador nos primeiros 5 segundos.
-             </div><p><br></p>`,
-      dev: `<div style="background-color: rgba(37, 99, 235, 0.22); border-left: 4px solid #60a5fa; padding: 12px 16px; margin: 12px 0; border-radius: 4px; font-family: 'Montserrat', sans-serif; color: #eff6ff;">
-              <span contenteditable="false" style="background-color: #2563eb; color: white; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; margin-right: 8px; display: inline-block; letter-spacing: 0.05em; user-select: none;">CONTEÚDO</span>
-              <strong style="color: #93c5fd;">Desenvolva o roteiro do vídeo aqui.</strong> Use frases curtas, dinâmicas e destaque pontos-chave em negrito.
-            </div><p><br></p>`,
-      final: `<div style="background-color: rgba(217, 119, 6, 0.22); border-left: 4px solid #fbbf24; padding: 12px 16px; margin: 12px 0; border-radius: 4px; font-family: 'Montserrat', sans-serif; color: #fffbeb;">
-                <span contenteditable="false" style="background-color: #d97706; color: white; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; margin-right: 8px; display: inline-block; letter-spacing: 0.05em; user-select: none;">CONCLUSÃO</span>
-                <strong style="color: #fcd34d;">Faça um resumo rápido do vídeo</strong> e prepare o espectador para a chamada de ação final.
-              </div><p><br></p>`,
-      cta: `<div style="background-color: rgba(5, 150, 105, 0.22); border-left: 4px solid #34d399; padding: 12px 16px; margin: 12px 0; border-radius: 4px; font-family: 'Montserrat', sans-serif; color: #ecfdf5;">
-              <span contenteditable="false" style="background-color: #059669; color: white; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; margin-right: 8px; display: inline-block; letter-spacing: 0.05em; user-select: none;">CTA</span>
-              <span style="color: #6ee7b7;">Peça o like, inscrição, ou indique o próximo vídeo recomendado.</span>
-            </div><p><br></p>`
-    };
-
-    const blockText = htmlBlocks[blockType];
-
-    if (editorRef.current) {
-      editorRef.current.focus();
-      document.execCommand("insertHTML", false, blockText);
-      handleEditorInput({ currentTarget: editorRef.current } as any);
-    } else {
-      const updated = scriptContent + blockText;
-      setScriptContent(updated);
-      const words = calculateWords(updated);
-      setWordCount(words);
-      setEstimatedDuration(Math.ceil(words / 2.6));
-      triggerScriptSave(updated);
-    }
   };
 
   // --- TAB 4: LEGO MODULAR BLOCKS ENGINE (DRAG & DROP) ---
@@ -990,11 +915,15 @@ export default function VideoIdeaWorkspace({
   };
 
   useEffect(() => {
-    let wakeLock: any = null;
+    interface LocalWakeLockSentinel {
+      release(): Promise<void>;
+    }
+    let wakeLock: LocalWakeLockSentinel | null = null;
     const requestWakeLock = async () => {
       if ("wakeLock" in navigator) {
         try {
-          wakeLock = await (navigator as any).wakeLock.request("screen");
+          const nav = navigator as unknown as { wakeLock: { request(type: "screen"): Promise<LocalWakeLockSentinel> } };
+          wakeLock = await nav.wakeLock.request("screen");
         } catch (err) {
           console.warn("Wake lock request failed", err);
         }
@@ -1063,24 +992,28 @@ export default function VideoIdeaWorkspace({
     return html;
   };
 
-  // --- VOICE TO TEXT HANDLER ---
   const handleVoiceTranscript = (text: string) => {
     if (!text.trim()) return;
 
     if (editorMode === "continuous") {
-      // In continuous mode, insert as a new paragraph into the contentEditable editor
-      const html = `<p style="color: #f1f1f1;">${text}</p>`;
+      // In continuous mode, insert plain text transcript at cursor position in textarea
       if (editorRef.current) {
-        editorRef.current.focus();
-        document.execCommand("insertHTML", false, html);
-        handleEditorInput({ currentTarget: editorRef.current } as any);
+        const textarea = editorRef.current;
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const val = textarea.value;
+        const insertText = val ? ` ${text} ` : text;
+        const updated = val.slice(0, start) + insertText + val.slice(end);
+        
+        handleEditorContentChange(updated);
+        
+        setTimeout(() => {
+          textarea.selectionStart = textarea.selectionEnd = start + insertText.length;
+          textarea.focus();
+        }, 0);
       } else {
-        const updated = scriptContent + html;
-        setScriptContent(updated);
-        const words = calculateWords(updated);
-        setWordCount(words);
-        setEstimatedDuration(Math.ceil(words / 2.6));
-        triggerScriptSave(updated);
+        const updated = scriptContent + ` ${text}`;
+        handleEditorContentChange(updated);
       }
     } else {
       // In blocks mode, create a new paragraph block with the transcribed text
@@ -1198,7 +1131,14 @@ export default function VideoIdeaWorkspace({
           )}
 
           {currentTab === "audio" && (
-            <AudioStudio />
+            <Suspense fallback={
+              <div className="p-8 text-center text-yt-text-secondary font-sans flex flex-col items-center justify-center gap-3">
+                <div className="w-8 h-8 rounded-full border-2 border-yt-red border-t-transparent animate-spin"></div>
+                <p className="text-xs font-semibold tracking-wider uppercase">Carregando Estúdio de Áudio...</p>
+              </div>
+            }>
+              <AudioStudio />
+            </Suspense>
           )}
 
           {currentTab === "references" && (
@@ -1250,10 +1190,9 @@ export default function VideoIdeaWorkspace({
               draggedBlockIndex={draggedBlockIndex}
               dragOverBlockIndex={dragOverBlockIndex}
               editorRef={editorRef}
-              onEditorInput={handleEditorInput}
+              onEditorContentChange={handleEditorContentChange}
               wordCount={wordCount}
               estimatedDuration={estimatedDuration}
-              onInsertQuickBlock={insertQuickBlock}
               ctaTemplates={channel?.ctaTemplates || []}
               scriptVersions={scriptVersions}
               loadingVersions={loadingVersions}

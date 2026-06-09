@@ -23,9 +23,8 @@ interface ScriptEditorProps {
   dragOverBlockIndex: number | null;
 
   // --- Continuous mode ---
-  editorRef: React.RefObject<HTMLDivElement | null>;
-  onEditorInput: (e: React.FormEvent<HTMLDivElement> | React.ChangeEvent<HTMLTextAreaElement>) => void;
-  onInsertQuickBlock: (type: "hook" | "dev" | "final" | "cta") => void;
+  editorRef: React.RefObject<HTMLTextAreaElement | null>;
+  onEditorContentChange: (val: string) => void;
   ctaTemplates: string[];
   scriptVersions: ScriptVersion[];
   loadingVersions: boolean;
@@ -58,8 +57,7 @@ const ScriptEditor: React.FC<ScriptEditorProps> = ({
   draggedBlockIndex,
   dragOverBlockIndex,
   editorRef,
-  onEditorInput,
-  onInsertQuickBlock,
+  onEditorContentChange,
   ctaTemplates,
   scriptVersions,
   loadingVersions,
@@ -148,10 +146,17 @@ const ScriptEditor: React.FC<ScriptEditorProps> = ({
                 type="button"
                 onClick={() => {
                   if (editorMode === "continuous" && editorRef.current) {
-                    const html = `<div style="background-color: rgba(5, 150, 105, 0.22); border-left: 4px solid #34d399; padding: 12px 16px; margin: 12px 0; border-radius: 4px; font-family: 'Montserrat', sans-serif; color: #ecfdf5;"><span contenteditable="false" style="background-color: #059669; color: white; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; margin-right: 8px; display: inline-block; letter-spacing: 0.05em; user-select: none;">CTA</span>${cta}</div>`;
-                    editorRef.current.focus();
-                    document.execCommand("insertHTML", false, html);
-                    onEditorInput({ currentTarget: editorRef.current } as any);
+                    const textarea = editorRef.current;
+                    const start = textarea.selectionStart;
+                    const end = textarea.selectionEnd;
+                    const val = textarea.value;
+                    const ctaText = `\n\n[CTA]\n${cta}\n`;
+                    const updated = val.slice(0, start) + ctaText + val.slice(end);
+                    onEditorContentChange(updated);
+                    setTimeout(() => {
+                      textarea.selectionStart = textarea.selectionEnd = start + ctaText.length;
+                      textarea.focus();
+                    }, 0);
                   } else {
                     onInsertBlock(blocks.length, "cta");
                   }
@@ -284,13 +289,13 @@ const ScriptEditor: React.FC<ScriptEditorProps> = ({
               type="button"
               onClick={() => {
                 if (editorRef.current) {
-                  const el = editorRef.current as unknown as HTMLTextAreaElement;
+                  const el = editorRef.current;
                   const start = el.selectionStart;
                   const val = el.value;
                   const newText = val.slice(0, start) + "\n\n[GANCHO]\nSeu gancho aqui...\n" + val.slice(start);
-                  onEditorInput({ currentTarget: { value: newText } } as any);
+                  onEditorContentChange(newText);
                 } else {
-                  onEditorInput({ currentTarget: { value: scriptContent + "\n\n[GANCHO]\nSeu gancho aqui...\n" } } as any);
+                  onEditorContentChange(scriptContent + "\n\n[GANCHO]\nSeu gancho aqui...\n");
                 }
               }}
               className="px-2.5 py-1 bg-[#ff3b30]/15 hover:bg-[#ff3b30]/25 text-[#ff3b30] text-[10px] font-mono font-semibold rounded-full uppercase tracking-wider cursor-pointer"
@@ -301,13 +306,13 @@ const ScriptEditor: React.FC<ScriptEditorProps> = ({
               type="button"
               onClick={() => {
                 if (editorRef.current) {
-                  const el = editorRef.current as unknown as HTMLTextAreaElement;
+                  const el = editorRef.current;
                   const start = el.selectionStart;
                   const val = el.value;
                   const newText = val.slice(0, start) + "\n\n[CONTEÚDO]\nSeu conteúdo aqui...\n" + val.slice(start);
-                  onEditorInput({ currentTarget: { value: newText } } as any);
+                  onEditorContentChange(newText);
                 } else {
-                  onEditorInput({ currentTarget: { value: scriptContent + "\n\n[CONTEÚDO]\nSeu conteúdo aqui...\n" } } as any);
+                  onEditorContentChange(scriptContent + "\n\n[CONTEÚDO]\nSeu conteúdo aqui...\n");
                 }
               }}
               className="px-2.5 py-1 bg-[#3ea6ff]/15 hover:bg-[#3ea6ff]/25 text-[#3ea6ff] text-[10px] font-mono font-semibold rounded-full uppercase tracking-wider cursor-pointer"
@@ -318,13 +323,13 @@ const ScriptEditor: React.FC<ScriptEditorProps> = ({
               type="button"
               onClick={() => {
                 if (editorRef.current) {
-                  const el = editorRef.current as unknown as HTMLTextAreaElement;
+                  const el = editorRef.current;
                   const start = el.selectionStart;
                   const val = el.value;
                   const newText = val.slice(0, start) + "\n\n[CONCLUSÃO]\nSua conclusão aqui...\n" + val.slice(start);
-                  onEditorInput({ currentTarget: { value: newText } } as any);
+                  onEditorContentChange(newText);
                 } else {
-                  onEditorInput({ currentTarget: { value: scriptContent + "\n\n[CONCLUSÃO]\nSua conclusão aqui...\n" } } as any);
+                  onEditorContentChange(scriptContent + "\n\n[CONCLUSÃO]\nSua conclusão aqui...\n");
                 }
               }}
               className="px-2.5 py-1 bg-[#ff9500]/15 hover:bg-[#ff9500]/25 text-[#ff9500] text-[10px] font-mono font-semibold rounded-full uppercase tracking-wider cursor-pointer"
@@ -335,13 +340,13 @@ const ScriptEditor: React.FC<ScriptEditorProps> = ({
               type="button"
               onClick={() => {
                 if (editorRef.current) {
-                  const el = editorRef.current as unknown as HTMLTextAreaElement;
+                  const el = editorRef.current;
                   const start = el.selectionStart;
                   const val = el.value;
                   const newText = val.slice(0, start) + "\n\n[CTA]\nSua CTA aqui...\n" + val.slice(start);
-                  onEditorInput({ currentTarget: { value: newText } } as any);
+                  onEditorContentChange(newText);
                 } else {
-                  onEditorInput({ currentTarget: { value: scriptContent + "\n\n[CTA]\nSua CTA aqui...\n" } } as any);
+                  onEditorContentChange(scriptContent + "\n\n[CTA]\nSua CTA aqui...\n");
                 }
               }}
               className="px-2.5 py-1 bg-[#4cd964]/15 hover:bg-[#4cd964]/25 text-[#4cd964] text-[10px] font-mono font-semibold rounded-full uppercase tracking-wider cursor-pointer"
@@ -368,7 +373,7 @@ const ScriptEditor: React.FC<ScriptEditorProps> = ({
                 // 6. Trim each line
                 formatted = formatted.split("\n").map(line => line.trim()).join("\n");
                 
-                onEditorInput({ currentTarget: { value: formatted } } as any);
+                onEditorContentChange(formatted);
               }}
               className="px-2.5 py-1 bg-yt-bg-overlay hover:bg-yt-bg-elevated text-yt-text-primary text-[10px] font-mono font-semibold rounded-full uppercase tracking-wider flex items-center gap-1 cursor-pointer transition-colors"
               title="Formatar Texto (quebrar em parágrafos e organizar)"
@@ -383,9 +388,9 @@ const ScriptEditor: React.FC<ScriptEditorProps> = ({
           {/* Plain Text Markdown Area */}
           <div className="relative">
             <textarea
-              ref={editorRef as any}
+              ref={editorRef}
               value={scriptContent}
-              onChange={onEditorInput}
+              onChange={(e) => onEditorContentChange(e.target.value)}
               className="w-full min-h-[400px] max-h-[600px] overflow-y-auto p-5 bg-yt-bg-primary border border-yt-bg-overlay text-yt-text-primary rounded-sm text-lg focus:outline-none focus:border-yt-red leading-relaxed font-sans"
               style={{ outline: "none", resize: "vertical" }}
               placeholder="Escreva o roteiro oficial do seu vídeo aqui usando Markdown. Use tags como [GANCHO], [CONTEÚDO], [CONCLUSÃO] para separar os blocos."
