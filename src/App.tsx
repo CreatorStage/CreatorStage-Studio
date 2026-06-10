@@ -3,7 +3,7 @@ import AuthScreen from "./components/AuthScreen";
 import Dashboard from "./components/Dashboard";
 import ChannelView from "./components/ChannelView";
 import VideoIdeaWorkspace from "./components/VideoIdeaWorkspace";
-import SalesPage from "./components/SalesPage";
+import LandingPage from "./components/LandingPage";
 import { User, Channel, VideoIdea, WorkspaceTab } from "./types";
 import { api, setUnauthorizedHandler } from "./api";
 
@@ -113,7 +113,7 @@ export default function App() {
   if (!user) {
     if (authMode === "landing") {
       return (
-        <SalesPage
+        <LandingPage
           onLogin={() => setAuthMode("login")}
           onSignup={() => setAuthMode("signup")}
         />
