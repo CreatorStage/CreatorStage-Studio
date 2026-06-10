@@ -69,12 +69,6 @@ export default function AuthScreen({ onSuccess, initialMode = "login", onBack }:
     }
   };
 
-  const fillDemoCredentials = () => {
-    setUsername("rodrigmatheus19");
-    setPassword("password123");
-    setIsLogin(true);
-    setError(null);
-  };
 
   return (
     <div className="min-h-screen bg-[#0f0f0f] text-[#f1f1f1] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 font-sans">
@@ -227,23 +221,7 @@ export default function AuthScreen({ onSuccess, initialMode = "login", onBack }:
             </button>
           </div>
 
-          {/* Quick Demo Assist Box styled as standard Creator Card */}
-          <div className="mt-6 bg-[#252525] border border-[#404040] p-4 rounded-sm">
-            <h4 className="text-xs font-semibold text-[#f1f1f1] uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
-              <span className="material-icons text-[#ff5045] text-sm">lightbulb_outline</span>
-              Acesso Demonstrativo Rápido
-            </h4>
-            <p className="text-xs text-[#aaaaaa] leading-relaxed">
-              Clique no botão abaixo para preencher automaticamente as credenciais já configuradas de teste.
-            </p>
-            <button
-              type="button"
-              onClick={fillDemoCredentials}
-              className="mt-3 w-full bg-transparent hover:bg-white/5 text-[#f1f1f1] border border-[#404040] text-xs font-medium uppercase tracking-wider py-2 rounded-sm transition-colors"
-            >
-              Usar Conta de Teste
-            </button>
-          </div>
+
 
         </div>
       </div>
