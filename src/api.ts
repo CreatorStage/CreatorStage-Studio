@@ -21,6 +21,15 @@ function getHeaders() {
   return headers;
 }
 
+export class ValidationError extends Error {
+  public errors: Record<string, string>;
+  constructor(errors: Record<string, string>) {
+    super("Erro de validação");
+    this.name = "ValidationError";
+    this.errors = errors;
+  }
+}
+
 async function requestJson<T>(url: string, options: RequestInit = {}, auth = true): Promise<T> {
   if (auth) {
     const token = localStorage.getItem("creator_auth_token");
@@ -41,13 +50,18 @@ async function requestJson<T>(url: string, options: RequestInit = {}, auth = tru
   });
 
   if (!res.ok) {
-    let message = "Erro ao executar requisição";
+    let errBody: any = null;
     try {
-      const err = await res.json();
-      message = err.error || err.message || message;
+      errBody = await res.json();
     } catch {
-      // mantém mensagem padrão
+      // ignore
     }
+
+    if (res.status === 400 && errBody && typeof errBody === "object" && !("message" in errBody) && !("error" in errBody)) {
+      throw new ValidationError(errBody);
+    }
+
+    const message = errBody?.error || errBody?.message || "Erro ao executar requisição";
     throw new Error(message);
   }
 

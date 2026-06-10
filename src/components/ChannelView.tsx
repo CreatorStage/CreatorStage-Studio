@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Channel, ChannelReferenceLink, ChecklistState, ChecklistStateEntry, VideoIdea, VideoIdeaStatus, User, SuggestedVideo, WorkspaceTab } from "../types";
-import { api } from "../api";
+import { api, ValidationError } from "../api";
 import ChannelGoals from "./ChannelGoals";
 import StudioSidebar from "./shared/StudioSidebar";
 import ChecklistDialog from "./channel/ChecklistDialog";
@@ -107,6 +107,7 @@ export default function ChannelView({ channel, onBack, onSelectIdea, onChannelUp
   const [tagInput, setTagInput] = useState("");
   const [deadline, setDeadline] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
   const [channelDraft, setChannelDraft] = useState(channel);
@@ -310,14 +311,21 @@ export default function ChannelView({ channel, onBack, onSelectIdea, onChannelUp
 
   const handleCreateIdea = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!mainTitle.trim()) {
-      setError("O titulo principal da ideia e obrigatorio.");
+    setFieldErrors({});
+    setError(null);
+
+    const errors: Record<string, string> = {};
+    if (!mainTitle || !mainTitle.trim()) {
+      errors.mainTitle = "O título principal é obrigatório.";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
 
     const tags = tagInput.split(",").map((tag) => tag.trim().toLowerCase()).filter(Boolean);
     setSaving(true);
-    setError(null);
 
     try {
       const created = await api.createIdea(channel.id, mainTitle.trim(), description.trim(), tags, deadline || undefined);
@@ -328,7 +336,11 @@ export default function ChannelView({ channel, onBack, onSelectIdea, onChannelUp
       setTagInput("");
       setDeadline("");
     } catch (err: any) {
-      setError(err.message || "Erro ao criar ideia");
+      if (err instanceof ValidationError) {
+        setFieldErrors(err.errors);
+      } else {
+        setError(err.message || "Erro ao criar ideia");
+      }
     } finally {
       setSaving(false);
     }
@@ -1434,7 +1446,21 @@ export default function ChannelView({ channel, onBack, onSelectIdea, onChannelUp
             <form onSubmit={handleCreateIdea} className="yt-card w-full max-w-lg p-7 relative z-10 space-y-5">
               <h3 className="text-2xl font-extrabold text-yt-text-primary">Nova Ideia</h3>
               {error && <div className="border border-yt-red/40 bg-yt-red/10 text-yt-text-primary p-3 text-sm">{error}</div>}
-              <input value={mainTitle} onChange={(e) => setMainTitle(e.target.value)} className="studio-input w-full p-3" placeholder="Título principal" required />
+              <div>
+                <input
+                  value={mainTitle}
+                  onChange={(e) => {
+                    setMainTitle(e.target.value);
+                    if (fieldErrors.mainTitle) setFieldErrors(prev => ({ ...prev, mainTitle: "" }));
+                  }}
+                  className="studio-input w-full p-3"
+                  placeholder="Título principal"
+                  required
+                />
+                {fieldErrors.mainTitle && (
+                  <p className="mt-1 text-xs text-[#ff5045] font-sans">{fieldErrors.mainTitle}</p>
+                )}
+              </div>
               <textarea rows={4} value={description} onChange={(e) => setDescription(e.target.value)} className="studio-input w-full p-3" placeholder="Descrição / proposta" />
               <input value={tagInput} onChange={(e) => setTagInput(e.target.value)} className="studio-input w-full p-3" placeholder="tags, separadas, por vírgula" />
               <input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} className="studio-input w-full p-3" />
