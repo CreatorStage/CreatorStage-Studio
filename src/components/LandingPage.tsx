@@ -115,10 +115,11 @@ export default function LandingPage({ onLogin, onSignup }: LandingPageProps) {
       >
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 md:px-8">
           <button type="button" onClick={onSignup} className="flex items-center gap-2.5 group">
-            <img src="/apple-touch-icon.png" alt="CreatorsDeck Logo" className="w-9 h-9 object-contain rounded-lg shadow-lg shadow-[#ff5045]/25 group-hover:shadow-[#ff5045]/40 transition-shadow" />
-            <span className="text-sm font-bold uppercase tracking-widest">
-              Creators<span className="text-[#ff5045]">Deck</span>
-            </span>
+            <img src="/apple-touch-icon.png" alt="CreatorsDeck Logo" className="w-10 h-10 object-contain rounded-lg shadow-lg shadow-[#ff5045]/25 group-hover:shadow-[#ff5045]/40 transition-shadow" />
+            <div className="flex flex-col items-start leading-none text-left">
+              <span className="text-base font-bold uppercase tracking-widest text-white">Creators</span>
+              <span className="text-base font-bold uppercase tracking-widest text-[#ff5045]">Deck</span>
+            </div>
           </button>
 
           <nav className="hidden items-center gap-6 text-xs font-semibold uppercase tracking-wider text-[#888] md:flex">
@@ -461,10 +462,11 @@ export default function LandingPage({ onLogin, onSignup }: LandingPageProps) {
         <div className="mx-auto max-w-7xl px-5 py-8 md:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2.5">
-              <img src="/apple-touch-icon.png" alt="CreatorsDeck Logo" className="w-7 h-7 object-contain rounded-md" />
-              <span className="text-xs font-bold uppercase tracking-widest text-[#888]">
-                Creators<span className="text-[#ff5045]">Deck</span>
-              </span>
+              <img src="/apple-touch-icon.png" alt="CreatorsDeck Logo" className="w-8 h-8 object-contain rounded-md" />
+              <div className="flex flex-col items-start leading-none text-left">
+                <span className="text-xs font-bold uppercase tracking-widest text-[#f1f1f1]">Creators</span>
+                <span className="text-xs font-bold uppercase tracking-widest text-[#ff5045]">Deck</span>
+              </div>
             </div>
 
             <div className="flex items-center gap-4 text-xs text-[#666]">

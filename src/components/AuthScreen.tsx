@@ -86,12 +86,16 @@ export default function AuthScreen({ onSuccess, initialMode = "login", onBack }:
           </button>
         )}
 
-        <div className="flex justify-center items-center gap-2">
-          {/* Logo YouTube Studio Style */}
-          <span className="material-icons text-[#ff5045] text-4xl">subscriptions</span>
-          <span className="text-xl font-bold uppercase tracking-wider text-[#f1f1f1]" style={{ fontStyle: 'normal' }}>
-            Creators<span className="text-[#ff5045]">Deck</span>
-          </span>
+        <div className="flex justify-center items-center gap-3">
+          <img src="/apple-touch-icon.png" alt="CreatorsDeck Logo" className="w-12 h-12 object-contain rounded-xl shadow-lg shadow-[#ff5045]/20" />
+          <div className="flex flex-col items-start leading-none">
+            <span className="text-2xl font-bold uppercase tracking-widest text-[#f1f1f1]">
+              Creators
+            </span>
+            <span className="text-2xl font-bold uppercase tracking-widest text-[#ff5045]">
+              Deck
+            </span>
+          </div>
         </div>
         <h2 className="mt-6 text-center text-xl font-semibold text-[#f1f1f1]">
           {isLogin ? "Fazer login no CreatorsDeck" : "Criar sua conta de criador"}
