@@ -1,0 +1,83 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "loading": "Please wait...",
+    "error": "Error",
+    "success": "Success",
+    "back": "Back to page",
+    "language": "Language",
+    "general": "General"
+  },
+  "auth": {
+    "login_title": "Login to CreatorsDeck",
+    "signup_title": "Create your creator account",
+    "subtitle_login": "Manage your channels and scripts in one place",
+    "subtitle_signup": "Start your integrated journey today",
+    "username": "Username",
+    "password": "Your Password",
+    "confirm_password": "Confirm Password",
+    "btn_login": "Access Dashboard",
+    "btn_signup": "Create My Account",
+    "switch_to_signup": "Don't have an account? Sign up",
+    "switch_to_login": "Already have an account? Login",
+    "err_user_len": "Username must be at least 3 characters long.",
+    "err_pass_len": "Password must be at least 6 characters long.",
+    "err_pass_match": "Passwords do not match.",
+    "err_user_blank": "Username cannot be blank.",
+    "err_pass_blank": "Password cannot be blank.",
+    "err_unexpected": "An unexpected error occurred"
+  },
+  "app": {
+    "restoring_session": "Restoring your secure session..."
+  },
+  "dashboard": {
+    "channels_title": "Dashboard Channels",
+    "channels_subtitle": "Select a channel to develop new ideas, organize scripts, and open the recording teleprompter.",
+    "loading_db": "Accessing database...",
+    "empty_state_title": "No channels registered",
+    "empty_state_text": "You need to set up at least one channel to start organizing new recording scripts.",
+    "btn_create_first": "Create My First Channel",
+    "new_channel": "New Channel",
+    "active_channels": "Active Channels",
+    "delete_channel_title": "Delete Channel",
+    "delete_channel_warning": "Deleting the channel \"{{name}}\" is permanent! All videos, ideas, notes, scripts, and references will be permanently deleted.",
+    "delete_password_label": "Confirm your Channel Password",
+    "btn_delete_confirm": "Delete Permanently",
+    "create_channel_title": "Register New Channel",
+    "create_name_label": "Official Channel Name",
+    "create_niche_label": "Main Niche / Category",
+    "btn_create_confirm": "Create Channel",
+    "saving": "Saving...",
+    "deleting": "Deleting...",
+    "ideas_saved": "saved ideas",
+    "niche_configured": "Configured niche:",
+    "access": "Access",
+    "footer_framework": "YouTube Studio Design Framework",
+    "footer_version": "MVP 1.0",
+    "success_create": "Channel created successfully!",
+    "success_delete": "Channel deleted successfully!",
+    "err_name_req": "Channel name is required.",
+    "err_niche_req": "Channel niche is required.",
+    "err_delete_pass": "Please, enter your password."
+  },
+  "sidebar": {
+    "account_settings": "Account Settings",
+    "logout": "Logout"
+  },
+  "landing": {
+    "nav_problem": "The Problem",
+    "nav_features": "Features",
+    "nav_workflow": "Workflow",
+    "nav_opensource": "Open Source",
+    "btn_login": "Login",
+    "btn_start": "Get Started",
+    "hero_badge": "Open Source — Free to use and contribute",
+    "hero_title_1": "Stop improvising the production of your",
+    "hero_title_2": "videos",
+    "hero_subtitle": "CreatorsDeck is an open-source workspace that centralizes ideas, modular scripts, references, notes, and a teleprompter — everything you need before hitting REC.",
+    "hero_btn_start": "Start now",
+    "hero_btn_github": "View on GitHub"
+  }
+}

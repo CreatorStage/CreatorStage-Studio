@@ -7,7 +7,10 @@ import LandingPage from "./components/LandingPage";
 import { User, Channel, VideoIdea, WorkspaceTab } from "./types";
 import { api, setUnauthorizedHandler } from "./api";
 
+import { useTranslation } from "react-i18next";
+
 export default function App() {
+  const { t } = useTranslation();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(() => {
@@ -104,7 +107,7 @@ export default function App() {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col justify-center items-center gap-4 text-slate-100">
         <div className="w-12 h-12 rounded-full border-4 border-purple-500 border-t-transparent animate-spin"></div>
-        <p className="text-sm font-mono text-slate-400">Restaurando sua sessão segura...</p>
+        <p className="text-sm font-mono text-slate-400">{t('app.restoring_session')}</p>
       </div>
     );
   }

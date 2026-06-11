@@ -19,6 +19,8 @@ import {
   Video,
   X
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "./shared/LanguageSwitcher";
 
 interface LandingPageProps {
   onLogin: () => void;
@@ -95,6 +97,7 @@ const techStack = [
 ];
 
 export default function LandingPage({ onLogin, onSignup }: LandingPageProps) {
+  const { t } = useTranslation();
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -123,13 +126,16 @@ export default function LandingPage({ onLogin, onSignup }: LandingPageProps) {
           </button>
 
           <nav className="hidden items-center gap-6 text-xs font-semibold uppercase tracking-wider text-[#888] md:flex">
-            <a href="#problemas" className="hover:text-white transition-colors">O Problema</a>
-            <a href="#recursos" className="hover:text-white transition-colors">Recursos</a>
-            <a href="#fluxo" className="hover:text-white transition-colors">Fluxo</a>
-            <a href="#opensource" className="hover:text-white transition-colors">Open Source</a>
+            <a href="#problemas" className="hover:text-white transition-colors">{t('landing.nav_problem')}</a>
+            <a href="#recursos" className="hover:text-white transition-colors">{t('landing.nav_features')}</a>
+            <a href="#fluxo" className="hover:text-white transition-colors">{t('landing.nav_workflow')}</a>
+            <a href="#opensource" className="hover:text-white transition-colors">{t('landing.nav_opensource')}</a>
           </nav>
 
           <div className="flex items-center gap-2">
+            <div className="hidden sm:block mr-2">
+              <LanguageSwitcher />
+            </div>
             <a
               href={REPO_URL}
               target="_blank"
@@ -144,14 +150,14 @@ export default function LandingPage({ onLogin, onSignup }: LandingPageProps) {
               onClick={onLogin}
               className="hidden px-4 py-2 text-xs font-semibold uppercase tracking-wider text-[#f1f1f1] hover:text-[#ff5045] sm:block transition-colors"
             >
-              Entrar
+              {t('landing.btn_login')}
             </button>
             <button
               type="button"
               onClick={onSignup}
               className="rounded-lg bg-gradient-to-r from-[#ff5045] to-[#ff2d20] px-4 py-2 text-xs font-bold uppercase tracking-wider text-white transition-all hover:shadow-lg hover:shadow-[#ff5045]/25"
             >
-              Começar
+              {t('landing.btn_start')}
             </button>
           </div>
         </div>
@@ -177,19 +183,18 @@ export default function LandingPage({ onLogin, onSignup }: LandingPageProps) {
             {/* Open Source badge */}
             <div className="mb-5 inline-flex items-center gap-2 border border-[#66bb6a]/30 bg-[#66bb6a]/10 px-3 py-2 rounded-full text-[11px] font-semibold uppercase tracking-widest text-[#66bb6a]">
               <Code2 size={14} />
-              Open Source — Livre para usar e contribuir
+              {t('landing.hero_badge')}
             </div>
 
             <h1 className="max-w-4xl text-4xl font-bold leading-tight text-white md:text-[3.5rem] md:leading-[1.1]">
-              Pare de improvisar a produção dos seus{" "}
+              {t('landing.hero_title_1')}{" "}
               <span className="bg-gradient-to-r from-[#ff5045] to-[#ff8a65] bg-clip-text text-transparent">
-                vídeos
+                {t('landing.hero_title_2')}
               </span>
             </h1>
 
             <p className="mt-6 max-w-2xl text-base leading-7 text-[#999] md:text-lg">
-              O CreatorsDeck é um workspace open source que centraliza ideias, roteiros modulares, 
-              referências, anotações e teleprompter — tudo o que você precisa antes de apertar REC.
+              {t('landing.hero_subtitle')}
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -198,7 +203,7 @@ export default function LandingPage({ onLogin, onSignup }: LandingPageProps) {
                 onClick={onSignup}
                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#ff5045] to-[#ff2d20] px-6 py-3.5 text-sm font-bold uppercase tracking-wider text-white transition-all hover:shadow-xl hover:shadow-[#ff5045]/20 hover:-translate-y-0.5"
               >
-                Começar agora
+                {t('landing.hero_btn_start')}
                 <ArrowRight size={18} />
               </button>
               <a
@@ -208,7 +213,7 @@ export default function LandingPage({ onLogin, onSignup }: LandingPageProps) {
                 className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/5 px-6 py-3.5 text-sm font-bold uppercase tracking-wider text-white transition-all hover:bg-white/10 hover:border-white/25"
               >
                 <Github size={18} />
-                Ver no GitHub
+                {t('landing.hero_btn_github')}
               </a>
             </div>
 

@@ -1,0 +1,83 @@
+{
+  "common": {
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "delete": "Excluir",
+    "loading": "Aguarde...",
+    "error": "Erro",
+    "success": "Sucesso",
+    "back": "Voltar para a página",
+    "language": "Idioma",
+    "general": "Geral"
+  },
+  "auth": {
+    "login_title": "Fazer login no CreatorsDeck",
+    "signup_title": "Criar sua conta de criador",
+    "subtitle_login": "Gerencie seus canais e roteiros em um só lugar",
+    "subtitle_signup": "Inicie sua jornada integrada hoje",
+    "username": "Nome de Usuário",
+    "password": "Sua Senha",
+    "confirm_password": "Confirmar Senha",
+    "btn_login": "Acessar Painel",
+    "btn_signup": "Criar Minha Conta",
+    "switch_to_signup": "Não possui conta? Cadastre-se",
+    "switch_to_login": "Já possui conta? Fazer login",
+    "err_user_len": "O usuário deve ter no mínimo 3 caracteres.",
+    "err_pass_len": "A senha deve ter no mínimo 6 caracteres.",
+    "err_pass_match": "As senhas não coincidem.",
+    "err_user_blank": "O usuário não pode ser em branco.",
+    "err_pass_blank": "A senha não pode ser em branco.",
+    "err_unexpected": "Ocorreu um erro inesperado"
+  },
+  "app": {
+    "restoring_session": "Restaurando sua sessão segura..."
+  },
+  "dashboard": {
+    "channels_title": "Canais do Painel",
+    "channels_subtitle": "Selecione o canal para desenvolver ideias inéditas, organizar roteiros e abrir o teleprompter de gravação.",
+    "loading_db": "Acessando banco de dados...",
+    "empty_state_title": "Nenhum canal cadastrado",
+    "empty_state_text": "Você precisa configurar no mínimo um canal para começar a organizar novos roteiros de gravação.",
+    "btn_create_first": "Criar Meu Primeiro Canal",
+    "new_channel": "Novo Canal",
+    "active_channels": "Canais Ativos",
+    "delete_channel_title": "Excluir Canal",
+    "delete_channel_warning": "A exclusão do canal \"{{name}}\" é definitiva! Todos os vídeos, ideias, notas, roteiros e referências serão excluídos permanentemente.",
+    "delete_password_label": "Confirme sua Senha do Canal",
+    "btn_delete_confirm": "Excluir Definitivamente",
+    "create_channel_title": "Cadastrar Novo Canal",
+    "create_name_label": "Nome Oficial do Canal",
+    "create_niche_label": "Nicho / Categoria Principal",
+    "btn_create_confirm": "Criar Canal",
+    "saving": "Salvando...",
+    "deleting": "Excluindo...",
+    "ideas_saved": "ideias salvas",
+    "niche_configured": "Nicho configurado:",
+    "access": "Acessar",
+    "footer_framework": "YouTube Studio Design Framework",
+    "footer_version": "MVP 1.0",
+    "success_create": "Canal criado com sucesso!",
+    "success_delete": "Canal excluído com sucesso!",
+    "err_name_req": "O nome do canal é obrigatório.",
+    "err_niche_req": "O nicho do canal é obrigatório.",
+    "err_delete_pass": "Por favor, digite a sua senha."
+  },
+  "sidebar": {
+    "account_settings": "Configurações da Conta",
+    "logout": "Sair"
+  },
+  "landing": {
+    "nav_problem": "O Problema",
+    "nav_features": "Recursos",
+    "nav_workflow": "Fluxo",
+    "nav_opensource": "Open Source",
+    "btn_login": "Entrar",
+    "btn_start": "Começar",
+    "hero_badge": "Open Source — Livre para usar e contribuir",
+    "hero_title_1": "Pare de improvisar a produção dos seus",
+    "hero_title_2": "vídeos",
+    "hero_subtitle": "O CreatorsDeck é um workspace open source que centraliza ideias, roteiros modulares, referências, anotações e teleprompter — tudo o que você precisa antes de apertar REC.",
+    "hero_btn_start": "Começar agora",
+    "hero_btn_github": "Ver no GitHub"
+  }
+}

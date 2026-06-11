@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { api, ValidationError } from "../api";
 import { User } from "../types";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "./shared/LanguageSwitcher";
 
 interface AuthScreenProps {
   onSuccess: (token: string, user: User) => void;
@@ -9,6 +11,7 @@ interface AuthScreenProps {
 }
 
 export default function AuthScreen({ onSuccess, initialMode = "login", onBack }: AuthScreenProps) {
+  const { t } = useTranslation();
   const [isLogin, setIsLogin] = useState(initialMode === "login");
   const [username, setUsername] = useState("rodrigmatheus19");
   const [password, setPassword] = useState("password123");
@@ -29,20 +32,20 @@ export default function AuthScreen({ onSuccess, initialMode = "login", onBack }:
     const errors: Record<string, string> = {};
     if (!isLogin) {
       if (!username || username.trim().length < 3) {
-        errors.username = "O usuário deve ter no mínimo 3 caracteres.";
+        errors.username = t('auth.err_user_len');
       }
       if (!password || password.length < 6) {
-        errors.password = "A senha deve ter no mínimo 6 caracteres.";
+        errors.password = t('auth.err_pass_len');
       }
       if (password !== confirmPassword) {
-        errors.confirmPassword = "As senhas não coincidem.";
+        errors.confirmPassword = t('auth.err_pass_match');
       }
     } else {
       if (!username || !username.trim()) {
-        errors.username = "O usuário não pode ser em branco.";
+        errors.username = t('auth.err_user_blank');
       }
       if (!password || !password.trim()) {
-        errors.password = "A senha não pode ser em branco.";
+        errors.password = t('auth.err_pass_blank');
       }
     }
 
@@ -64,7 +67,7 @@ export default function AuthScreen({ onSuccess, initialMode = "login", onBack }:
       if (err instanceof ValidationError) {
         setFieldErrors(err.errors);
       } else {
-        setError(err.message || "Ocorreu um erro inesperado");
+        setError(err.message || t('auth.err_unexpected'));
       }
     } finally {
       setLoading(false);
@@ -74,6 +77,9 @@ export default function AuthScreen({ onSuccess, initialMode = "login", onBack }:
 
   return (
     <div className="min-h-screen bg-[#0f0f0f] text-[#f1f1f1] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 font-sans">
+      <div className="absolute top-4 right-4">
+        <LanguageSwitcher />
+      </div>
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         {onBack && (
           <button
@@ -82,7 +88,7 @@ export default function AuthScreen({ onSuccess, initialMode = "login", onBack }:
             className="mb-8 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#aaaaaa] hover:text-[#f1f1f1]"
           >
             <span className="material-icons text-sm">arrow_back</span>
-            Voltar para a página
+            {t('common.back')}
           </button>
         )}
 
@@ -98,10 +104,10 @@ export default function AuthScreen({ onSuccess, initialMode = "login", onBack }:
           </div>
         </div>
         <h2 className="mt-6 text-center text-xl font-semibold text-[#f1f1f1]">
-          {isLogin ? "Fazer login no CreatorsDeck" : "Criar sua conta de criador"}
+          {isLogin ? t('auth.login_title') : t('auth.signup_title')}
         </h2>
         <p className="mt-2 text-center text-sm text-[#aaaaaa]">
-          {isLogin ? "Gerencie seus canais e roteiros em um só lugar" : "Inicie sua jornada integrada hoje"}
+          {isLogin ? t('auth.subtitle_login') : t('auth.subtitle_signup')}
         </p>
       </div>
 
@@ -120,7 +126,7 @@ export default function AuthScreen({ onSuccess, initialMode = "login", onBack }:
 
             <div>
               <label className="block text-xs font-semibold text-[#aaaaaa] uppercase tracking-wider mb-2">
-                Nome de Usuário
+                {t('auth.username')}
               </label>
               <div className="relative">
                 <span className="material-icons absolute left-3 top-2 text-[#717171] text-lg">person_outline</span>
@@ -143,7 +149,7 @@ export default function AuthScreen({ onSuccess, initialMode = "login", onBack }:
 
             <div>
               <label className="block text-xs font-semibold text-[#aaaaaa] uppercase tracking-wider mb-2">
-                Sua Senha
+                {t('auth.password')}
               </label>
               <div className="relative">
                 <span className="material-icons absolute left-3 top-2 text-[#717171] text-lg">lock_outline</span>
@@ -175,7 +181,7 @@ export default function AuthScreen({ onSuccess, initialMode = "login", onBack }:
             {!isLogin && (
               <div>
                 <label className="block text-xs font-semibold text-[#aaaaaa] uppercase tracking-wider mb-2">
-                  Confirmar Senha
+                  {t('auth.confirm_password')}
                 </label>
                 <div className="relative">
                   <span className="material-icons absolute left-3 top-2 text-[#717171] text-lg">lock_outline</span>
@@ -215,17 +221,17 @@ export default function AuthScreen({ onSuccess, initialMode = "login", onBack }:
                 {loading ? (
                   <>
                     <span className="material-icons animate-sync-spin text-sm">sync</span>
-                    <span>Aguarde...</span>
+                    <span>{t('common.loading')}</span>
                   </>
                 ) : isLogin ? (
                   <>
                     <span className="material-icons text-sm">login</span>
-                    <span>Acessar Painel</span>
+                    <span>{t('auth.btn_login')}</span>
                   </>
                 ) : (
                   <>
                     <span className="material-icons text-sm">person_add</span>
-                    <span>Criar Minha Conta</span>
+                    <span>{t('auth.btn_signup')}</span>
                   </>
                 )}
               </button>
@@ -241,11 +247,9 @@ export default function AuthScreen({ onSuccess, initialMode = "login", onBack }:
               }}
               className="text-xs text-[#ff5045] hover:underline"
             >
-              {isLogin ? "Não possui conta? Cadastre-se" : "Já possui conta? Fazer login"}
+              {isLogin ? t('auth.switch_to_signup') : t('auth.switch_to_login')}
             </button>
           </div>
-
-
 
         </div>
       </div>

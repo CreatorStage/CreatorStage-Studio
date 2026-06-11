@@ -15,10 +15,13 @@
     "dotenv": "^16.4.5",
     "express": "^4.21.2",
     "http-proxy-middleware": "^3.0.3",
+    "i18next": "^26.3.1",
+    "i18next-browser-languagedetector": "^8.2.1",
     "lucide-react": "^0.468.0",
     "motion": "^11.11.17",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-i18next": "^17.0.8",
     "sweetalert2": "^11.26.25"
   },
   "devDependencies": {
