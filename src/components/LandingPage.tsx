@@ -27,7 +27,7 @@ interface LandingPageProps {
   onSignup: () => void;
 }
 
-const REPO_URL = "https://github.com/CreatorsDeck/CreatorsDeck-Studio";
+const REPO_URL = "https://github.com/CreatorStage/creatorsdeck-web";
 
 const problems = [
   {
