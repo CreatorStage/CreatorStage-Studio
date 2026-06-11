@@ -4,6 +4,7 @@ import { api, ValidationError } from "../api";
 import SettingsDialog from "./SettingsDialog";
 import StudioSidebar from "./shared/StudioSidebar";
 import { swal } from "../utils/swal";
+import { useTranslation } from "react-i18next";
 
 interface DashboardProps {
   user: User;
@@ -14,6 +15,7 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ user, onLogout, onSelectChannel, theme, toggleTheme }: DashboardProps) {
+  const { t } = useTranslation();
   const [channels, setChannels] = useState<Channel[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -59,10 +61,10 @@ export default function Dashboard({ user, onLogout, onSelectChannel, theme, togg
     // Active client-side validations
     const errors: Record<string, string> = {};
     if (!name || !name.trim()) {
-      errors.name = "O nome do canal é obrigatório.";
+      errors.name = t('dashboard.err_name_req');
     }
     if (!niche || !niche.trim()) {
-      errors.niche = "O nicho do canal é obrigatório.";
+      errors.niche = t('dashboard.err_niche_req');
     }
 
     if (Object.keys(errors).length > 0) {
@@ -77,12 +79,12 @@ export default function Dashboard({ user, onLogout, onSelectChannel, theme, togg
       setShowModal(false);
       setName("");
       setNiche("");
-      swal.toast("Canal criado com sucesso!");
+      swal.toast(t('dashboard.success_create'));
     } catch (err: any) {
       if (err instanceof ValidationError) {
         setFieldErrors(err.errors);
       } else {
-        setError(err.message || "Não foi possível criar o canal");
+        setError(err.message || t('common.error'));
       }
     } finally {
       setSaving(false);
@@ -93,7 +95,7 @@ export default function Dashboard({ user, onLogout, onSelectChannel, theme, togg
     e.preventDefault();
     if (!selectedChannelToDelete) return;
     if (!deletePassword) {
-      setDeleteError("Por favor, digite a sua senha.");
+      setDeleteError(t('dashboard.err_delete_pass'));
       return;
     }
     setDeleteError(null);
@@ -104,9 +106,9 @@ export default function Dashboard({ user, onLogout, onSelectChannel, theme, togg
       setShowDeleteModal(false);
       setSelectedChannelToDelete(null);
       setDeletePassword("");
-      swal.toast("Canal excluído com sucesso!");
+      swal.toast(t('dashboard.success_delete'));
     } catch (err: any) {
-      setDeleteError(err.message || "Erro ao excluir o canal. Verifique a senha.");
+      setDeleteError(err.message || t('common.error'));
     } finally {
       setDeleting(false);
     }
@@ -130,7 +132,7 @@ export default function Dashboard({ user, onLogout, onSelectChannel, theme, togg
                 className="w-full bg-[#ff5045] hover:bg-[#ff3f33] text-[#0b0b0b] py-3 rounded-[3px] font-extrabold uppercase tracking-wider text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer border-0"
               >
                 <span className="material-icons text-base">add</span>
-                Novo Canal
+                {t('dashboard.new_channel')}
               </button>
             }
             footerSection={
@@ -140,14 +142,14 @@ export default function Dashboard({ user, onLogout, onSelectChannel, theme, togg
                   className="w-full text-left text-yt-text-secondary hover:text-yt-text-primary flex items-center gap-3 text-sm transition-colors bg-transparent border-0 cursor-pointer"
                 >
                   <span className="material-icons text-[18px]">settings</span>
-                  <span className="font-medium">Configurações da Conta</span>
+                  <span className="font-medium">{t('sidebar.account_settings')}</span>
                 </button>
                 <button
                   onClick={onLogout}
                   className="w-full text-left text-[#ff5045] hover:text-white flex items-center gap-3 text-sm transition-colors bg-transparent border-0 cursor-pointer"
                 >
                   <span className="material-icons text-[18px] text-[#ff5045]">logout</span>
-                  <span className="font-medium">Sair</span>
+                  <span className="font-medium">{t('sidebar.logout')}</span>
                 </button>
                 <p className="text-[10px] text-yt-text-disabled uppercase tracking-widest font-sans text-center pt-2 border-t border-yt-bg-overlay">CreatorsDeck Studio</p>
               </div>
@@ -158,13 +160,13 @@ export default function Dashboard({ user, onLogout, onSelectChannel, theme, togg
               className="w-full bg-[#ff5045] hover:bg-[#ff3f33] text-[#0b0b0b] py-3 rounded-[3px] font-extrabold uppercase tracking-wider text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer border-0"
             >
               <span className="material-icons text-base">add</span>
-              Novo Canal
+              {t('dashboard.new_channel')}
             </button>
 
             <button className="w-full h-[50px] flex items-center gap-3.5 border-l-[3px] text-left transition-colors border-[#ff5045] bg-yt-bg-elevated text-[#ff5045] cursor-default px-7 border-0">
               <span className="material-icons text-[20px] shrink-0">subscriptions</span>
               <span className="flex items-center justify-between w-full">
-                <span className="text-sm font-semibold">Canais Ativos</span>
+                <span className="text-sm font-semibold">{t('dashboard.active_channels')}</span>
                 <span className="bg-yt-bg-primary text-yt-text-secondary text-[10px] px-2 py-0.5 rounded font-mono">{channels.length}</span>
               </span>
             </button>
@@ -190,7 +192,7 @@ export default function Dashboard({ user, onLogout, onSelectChannel, theme, togg
             sidebarCollapsed ? (
               <button
                 onClick={() => setShowModal(true)}
-                title="Novo Canal"
+                title={t('dashboard.new_channel')}
                 className="w-full h-10 bg-[#ff5045] hover:bg-[#ff3f33] text-white rounded-[3px] flex items-center justify-center transition-colors cursor-pointer border-0"
               >
                 <span className="material-icons text-base">add</span>
@@ -201,7 +203,7 @@ export default function Dashboard({ user, onLogout, onSelectChannel, theme, togg
                 className="w-full bg-[#ff5045] hover:bg-[#ff3f33] text-[#0b0b0b] py-3 rounded-[3px] font-extrabold uppercase tracking-wider text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer border-0"
               >
                 <span className="material-icons text-base">add</span>
-                Novo Canal
+                {t('dashboard.new_channel')}
               </button>
             )
           }
@@ -212,14 +214,14 @@ export default function Dashboard({ user, onLogout, onSelectChannel, theme, togg
                 className="w-full text-left text-yt-text-secondary hover:text-yt-text-primary flex items-center gap-3 text-sm transition-colors bg-transparent border-0 cursor-pointer"
               >
                 <span className="material-icons text-[18px]">settings</span>
-                {!sidebarCollapsed && <span className="font-medium">Configurações da Conta</span>}
+                {!sidebarCollapsed && <span className="font-medium">{t('sidebar.account_settings')}</span>}
               </button>
               <button
                 onClick={onLogout}
                 className="w-full text-left text-[#ff5045] hover:text-white flex items-center gap-3 text-sm transition-colors bg-transparent border-0 cursor-pointer"
               >
                 <span className="material-icons text-[18px] text-[#ff5045]">logout</span>
-                {!sidebarCollapsed && <span className="font-medium">Sair</span>}
+                {!sidebarCollapsed && <span className="font-medium">{t('sidebar.logout')}</span>}
               </button>
               {!sidebarCollapsed && user && (
                 <div className="flex items-center gap-3 pt-3 border-t border-yt-bg-overlay">
@@ -242,7 +244,7 @@ export default function Dashboard({ user, onLogout, onSelectChannel, theme, togg
             <span className="material-icons text-[20px] shrink-0">subscriptions</span>
             {!sidebarCollapsed && (
               <span className="flex items-center justify-between w-full">
-                <span className="text-sm font-semibold">Canais Ativos</span>
+                <span className="text-sm font-semibold">{t('dashboard.active_channels')}</span>
                 <span className="bg-yt-bg-primary text-yt-text-secondary text-[10px] px-2 py-0.5 rounded font-mono">{channels.length}</span>
               </span>
             )}
@@ -254,7 +256,7 @@ export default function Dashboard({ user, onLogout, onSelectChannel, theme, togg
           <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-yt-bg-overlay pb-5">
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-xl font-semibold text-yt-text-primary">Canais do Painel</h1>
+                <h1 className="text-xl font-semibold text-yt-text-primary">{t('dashboard.channels_title')}</h1>
                 <button
                   onClick={toggleTheme}
                   className="w-8 h-8 rounded-full flex items-center justify-center bg-yt-bg-surface hover:bg-yt-bg-elevated border border-yt-bg-overlay text-yt-text-secondary hover:text-yt-text-primary transition-all duration-200 cursor-pointer"
@@ -266,7 +268,7 @@ export default function Dashboard({ user, onLogout, onSelectChannel, theme, togg
                 </button>
               </div>
               <p className="text-xs text-yt-text-secondary mt-1">
-                Selecione o canal para desenvolver ideias inéditas, organizar roteiros e abrir o teleprompter de gravação.
+                {t('dashboard.channels_subtitle')}
               </p>
             </div>
           </div>
@@ -275,21 +277,21 @@ export default function Dashboard({ user, onLogout, onSelectChannel, theme, togg
           {loading ? (
             <div className="flex flex-col justify-center items-center py-20 gap-3">
               <span className="material-icons text-3xl text-[#ff5045] animate-sync-spin">sync</span>
-              <p className="text-xs text-[#aaaaaa] uppercase tracking-wider">Acessando banco de dados...</p>
+              <p className="text-xs text-[#aaaaaa] uppercase tracking-wider">{t('dashboard.loading_db')}</p>
             </div>
           ) : channels.length === 0 ? (
             /* Empty State */
             <div className="yt-card p-10 text-center max-w-xl mx-auto my-6">
               <span className="material-icons text-yt-text-disabled text-5xl mb-4">subscriptions</span>
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-yt-text-primary mb-2">Nenhum canal cadastrado</h3>
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-yt-text-primary mb-2">{t('dashboard.empty_state_title')}</h3>
               <p className="text-xs text-yt-text-secondary leading-relaxed max-w-sm mx-auto mb-6">
-                Você precisa configurar no mínimo um canal para começar a organizar novos roteiros de gravação.
+                {t('dashboard.empty_state_text')}
               </p>
               <button
                 onClick={() => setShowModal(true)}
                 className="yt-btn-primary"
               >
-                Criar Meu Primeiro Canal
+                {t('dashboard.btn_create_first')}
               </button>
             </div>
           ) : (
@@ -307,15 +309,15 @@ export default function Dashboard({ user, onLogout, onSelectChannel, theme, togg
                         {channel.name}
                       </h3>
                       <span className="text-[10px] font-medium tracking-wider uppercase text-[#ce93d8] bg-purple-900/20 py-0.5 px-2.5 rounded-full border border-[#ce93d8]/20 shrink-0">
-                        {channel.niche || "Geral"}
+                        {channel.niche || t('common.general')}
                       </span>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-yt-text-secondary font-sans mt-1">
-                      <span>Nicho configurado: <strong>{channel.niche || "Geral"}</strong></span>
+                      <span>{t('dashboard.niche_configured')} <strong>{channel.niche || t('common.general')}</strong></span>
                       <span className="text-yt-text-disabled">•</span>
                       <span className="flex items-center gap-1 font-sans">
                         <span className="material-icons text-yt-text-disabled text-xs mt-0.5">lightbulb_outline</span>
-                        <strong>{channel.ideasCount ?? 0}</strong> ideias salvas
+                        <strong>{channel.ideasCount ?? 0}</strong> {t('dashboard.ideas_saved')}
                       </span>
                     </div>
                   </div>
@@ -330,13 +332,13 @@ export default function Dashboard({ user, onLogout, onSelectChannel, theme, togg
                         setShowDeleteModal(true);
                       }}
                       className="p-2 text-yt-text-disabled hover:text-yt-red rounded bg-transparent border-0 cursor-pointer flex items-center justify-center transition-colors"
-                      title="Excluir canal"
+                      title={t('common.delete')}
                     >
                       <span className="material-icons text-sm">delete</span>
                     </button>
                     
                     <span className="text-[#ff5045] group-hover:text-[#ff3f33] uppercase tracking-wider font-semibold text-[11px] flex items-center gap-0.5 transition-colors">
-                      Acessar <span className="material-icons text-sm">chevron_right</span>
+                      {t('dashboard.access')} <span className="material-icons text-sm">chevron_right</span>
                     </span>
                   </div>
                 </div>
@@ -348,8 +350,8 @@ export default function Dashboard({ user, onLogout, onSelectChannel, theme, togg
 
       {/* Footer */}
       <footer className="h-[40px] bg-yt-bg-surface border-t border-yt-bg-overlay flex items-center justify-between px-6 text-[11px] text-yt-text-disabled uppercase tracking-widest mt-auto">
-        <span>YouTube Studio Design Framework</span>
-        <span>MVP 1.0</span>
+        <span>{t('dashboard.footer_framework')}</span>
+        <span>{t('dashboard.footer_version')}</span>
       </footer>
 
       {/* CREATE CHANNEL DIALOG */}
@@ -360,7 +362,7 @@ export default function Dashboard({ user, onLogout, onSelectChannel, theme, togg
           <div className="bg-yt-bg-surface border border-yt-bg-overlay rounded-sm w-full max-w-md p-6 relative z-10 shadow-2xl">
             <h3 className="text-base font-semibold text-yt-text-primary uppercase tracking-wider mb-4 flex items-center gap-2">
               <span className="material-icons text-yt-red">add_box</span>
-              Cadastrar Novo Canal
+              {t('dashboard.create_channel_title')}
             </h3>
 
             {error && (
@@ -372,7 +374,7 @@ export default function Dashboard({ user, onLogout, onSelectChannel, theme, togg
             <form onSubmit={handleCreateChannel} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-yt-text-secondary mb-1.5">
-                  Nome Oficial do Canal
+                  {t('dashboard.create_name_label')}
                 </label>
                 <input
                   type="text"
@@ -382,7 +384,7 @@ export default function Dashboard({ user, onLogout, onSelectChannel, theme, togg
                     setName(e.target.value);
                     if (fieldErrors.name) setFieldErrors(prev => ({ ...prev, name: "" }));
                   }}
-                  placeholder="ex: Canal Finanças Explicadas ou Vlogs de Culinária"
+                  placeholder="ex: Canal Finanças Explicadas"
                   className="w-full bg-yt-bg-primary border border-yt-bg-overlay text-yt-text-primary rounded-sm py-2 px-3 focus:outline-none focus:border-yt-red text-sm"
                 />
                 {fieldErrors.name && (
@@ -392,7 +394,7 @@ export default function Dashboard({ user, onLogout, onSelectChannel, theme, togg
 
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-yt-text-secondary mb-1.5">
-                  Nicho / Categoria Principal
+                  {t('dashboard.create_niche_label')}
                 </label>
                 <input
                   type="text"
@@ -416,14 +418,14 @@ export default function Dashboard({ user, onLogout, onSelectChannel, theme, togg
                   onClick={() => setShowModal(false)}
                   className="yt-btn-secondary"
                 >
-                  Cancelar
+                  {t('common.cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
                   className="yt-btn-primary"
                 >
-                  {saving ? "Salvando..." : "Criar Canal"}
+                  {saving ? t('dashboard.saving') : t('dashboard.btn_create_confirm')}
                 </button>
               </div>
             </form>
@@ -439,11 +441,11 @@ export default function Dashboard({ user, onLogout, onSelectChannel, theme, togg
           <div className="bg-yt-bg-surface border border-yt-bg-overlay rounded-sm w-full max-w-sm p-6 relative z-10 shadow-2xl">
             <h3 className="text-base font-semibold text-yt-text-primary uppercase tracking-wider mb-2 flex items-center gap-2">
               <span className="material-icons text-yt-red">warning</span>
-              Excluir Canal
+              {t('dashboard.delete_channel_title')}
             </h3>
             
             <p className="text-xs text-yt-text-secondary leading-relaxed mb-4">
-              A exclusão do canal <strong className="text-yt-text-primary">"{selectedChannelToDelete.name}"</strong> é definitiva! Todos os vídeos, ideias, notas, roteiros e referências serão excluídos permanentemente.
+              {t('dashboard.delete_channel_warning').replace('{{name}}', selectedChannelToDelete.name)}
             </p>
 
             {deleteError && (
@@ -455,14 +457,14 @@ export default function Dashboard({ user, onLogout, onSelectChannel, theme, togg
             <form onSubmit={handleDeleteChannel} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-yt-text-secondary mb-1.5">
-                  Confirme sua Senha do Canal
+                  {t('dashboard.delete_password_label')}
                 </label>
                 <input
                   type="password"
                   required
                   value={deletePassword}
                   onChange={(e) => setDeletePassword(e.target.value)}
-                  placeholder="Digite sua senha de acesso"
+                  placeholder="********"
                   className="w-full bg-yt-bg-primary border border-yt-bg-overlay text-yt-text-primary rounded-sm py-2 px-3 focus:outline-none focus:border-yt-red text-sm"
                 />
               </div>
@@ -473,14 +475,14 @@ export default function Dashboard({ user, onLogout, onSelectChannel, theme, togg
                   onClick={() => setShowDeleteModal(false)}
                   className="yt-btn-secondary text-yt-text-primary"
                 >
-                  Cancelar
+                  {t('common.cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={deleting}
                   className="px-4 py-1.5 bg-[#ff5045] hover:bg-[#e0453b] disabled:bg-[#717171] text-white font-medium text-xs uppercase tracking-wider rounded-sm transition-colors cursor-pointer"
                 >
-                  {deleting ? "Excluindo..." : "Excluir Definitivamente"}
+                  {deleting ? t('dashboard.deleting') : t('dashboard.btn_delete_confirm')}
                 </button>
               </div>
             </form>

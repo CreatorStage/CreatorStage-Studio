@@ -78,6 +78,16 @@ async function requestJson<T>(url: string, options: RequestInit = {}, auth = tru
 }
 
 export const api = {
+  // Health
+  async checkHealth(): Promise<boolean> {
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/health`);
+      return res.ok;
+    } catch {
+      return false;
+    }
+  },
+
   // Auth
   async login(username: string, password: string): Promise<{ token: string; user: User }> {
     const res = await requestJson<{ token: string; user: User }>(`${API_BASE}/api/auth/login`, {
