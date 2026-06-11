@@ -21,71 +21,32 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "./shared/LanguageSwitcher";
+import { api } from "../api";
 
 interface LandingPageProps {
   onLogin: () => void;
   onSignup: () => void;
 }
 
-const REPO_URL = "https://github.com/CreatorStage/creatorsdeck-web";
+const REPO_URL = "https://github.com/CreatorStage";
 
 const problems = [
-  {
-    icon: X,
-    problem: "Ideias espalhadas em apps diferentes",
-    solution: "Banco de ideias por canal com status, tags e prazos centralizados."
-  },
-  {
-    icon: X,
-    problem: "Roteiro solto no Google Docs, sem estrutura",
-    solution: "Editor modular em blocos: Gancho, Conteúdo, CTA e Conclusão."
-  },
-  {
-    icon: X,
-    problem: "Precisa alternar entre apps para gravar",
-    solution: "Teleprompter integrado com controle de velocidade e tela cheia."
-  },
-  {
-    icon: X,
-    problem: "Nenhuma visão clara de progresso",
-    solution: "Kanban de produção com etapas de Ideia até Publicado."
-  },
-  {
-    icon: X,
-    problem: "Referências e thumbnails salvas em pastas soltas",
-    solution: "Moodboard integrado com captura via extensão do Chrome."
-  },
-  {
-    icon: X,
-    problem: "Paga caro por ferramentas fechadas",
-    solution: "100% open source, self-hosted e gratuito para sempre."
-  }
+  { icon: X, problemKey: "problem_1", solutionKey: "solution_1" },
+  { icon: X, problemKey: "problem_2", solutionKey: "solution_2" },
+  { icon: X, problemKey: "problem_3", solutionKey: "solution_3" },
+  { icon: X, problemKey: "problem_4", solutionKey: "solution_4" },
+  { icon: X, problemKey: "problem_5", solutionKey: "solution_5" },
+  { icon: X, problemKey: "problem_6", solutionKey: "solution_6" }
 ];
 
 const features = [
-  {
-    icon: Lightbulb,
-    title: "Banco de ideias por canal",
-    text: "Organize pautas, status, tags, prazos e alternativas de títulos sem espalhar tudo em planilhas."
-  },
-  {
-    icon: FileText,
-    title: "Roteiros em blocos",
-    text: "Monte ganchos, desenvolvimento, conclusão e CTA em uma estrutura fácil de editar e reorganizar."
-  },
-  {
-    icon: Mic2,
-    title: "Teleprompter integrado",
-    text: "Saia do roteiro direto para a gravação com controle de velocidade, fonte, tema e tela cheia."
-  },
-  {
-    icon: CalendarClock,
-    title: "Fluxo de produção claro",
-    text: "Acompanhe cada vídeo de Ideia até Publicado com etapas visíveis e contexto preservado."
-  }
+  { icon: Lightbulb, titleKey: "feature_1_title", textKey: "feature_1_desc" },
+  { icon: FileText, titleKey: "feature_2_title", textKey: "feature_2_desc" },
+  { icon: Mic2, titleKey: "feature_3_title", textKey: "feature_3_desc" },
+  { icon: CalendarClock, titleKey: "feature_4_title", textKey: "feature_4_desc" }
 ];
 
-const workflow = ["Ideia", "Referências", "Roteiro", "Gravação", "Publicado"];
+const workflow = ["workflow_step_1", "workflow_step_2", "workflow_step_3", "workflow_step_4", "workflow_step_5"];
 
 const techStack = [
   { name: "React 19", color: "#61dafb" },
@@ -99,6 +60,7 @@ const techStack = [
 export default function LandingPage({ onLogin, onSignup }: LandingPageProps) {
   const { t } = useTranslation();
   const [scrolled, setScrolled] = useState(false);
+  const [isBackendHealthy, setIsBackendHealthy] = useState(false);
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 20);
@@ -106,15 +68,18 @@ export default function LandingPage({ onLogin, onSignup }: LandingPageProps) {
     return () => window.removeEventListener("scroll", handler);
   }, []);
 
+  useEffect(() => {
+    api.checkHealth().then(setIsBackendHealthy);
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-[#f1f1f1] font-sans">
       {/* ─── HEADER ─── */}
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          scrolled
-            ? "bg-[#0a0a0a]/95 backdrop-blur-md border-b border-white/8 shadow-lg shadow-black/20"
-            : "bg-transparent border-b border-transparent"
-        }`}
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled
+          ? "bg-[#0a0a0a]/95 backdrop-blur-md border-b border-white/8 shadow-lg shadow-black/20"
+          : "bg-transparent border-b border-transparent"
+          }`}
       >
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 md:px-8">
           <button type="button" onClick={onSignup} className="flex items-center gap-2.5 group">
@@ -145,20 +110,24 @@ export default function LandingPage({ onLogin, onSignup }: LandingPageProps) {
               <Github size={15} />
               GitHub
             </a>
-            <button
-              type="button"
-              onClick={onLogin}
-              className="hidden px-4 py-2 text-xs font-semibold uppercase tracking-wider text-[#f1f1f1] hover:text-[#ff5045] sm:block transition-colors"
-            >
-              {t('landing.btn_login')}
-            </button>
-            <button
-              type="button"
-              onClick={onSignup}
-              className="rounded-lg bg-gradient-to-r from-[#ff5045] to-[#ff2d20] px-4 py-2 text-xs font-bold uppercase tracking-wider text-white transition-all hover:shadow-lg hover:shadow-[#ff5045]/25"
-            >
-              {t('landing.btn_start')}
-            </button>
+            {isBackendHealthy && (
+              <>
+                <button
+                  type="button"
+                  onClick={onLogin}
+                  className="hidden px-4 py-2 text-xs font-semibold uppercase tracking-wider text-[#f1f1f1] hover:text-[#ff5045] sm:block transition-colors"
+                >
+                  {t('landing.btn_login')}
+                </button>
+                <button
+                  type="button"
+                  onClick={onSignup}
+                  className="rounded-lg bg-gradient-to-r from-[#ff5045] to-[#ff2d20] px-4 py-2 text-xs font-bold uppercase tracking-wider text-white transition-all hover:shadow-lg hover:shadow-[#ff5045]/25"
+                >
+                  {t('landing.btn_start')}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -198,14 +167,16 @@ export default function LandingPage({ onLogin, onSignup }: LandingPageProps) {
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <button
-                type="button"
-                onClick={onSignup}
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#ff5045] to-[#ff2d20] px-6 py-3.5 text-sm font-bold uppercase tracking-wider text-white transition-all hover:shadow-xl hover:shadow-[#ff5045]/20 hover:-translate-y-0.5"
-              >
-                {t('landing.hero_btn_start')}
-                <ArrowRight size={18} />
-              </button>
+              {isBackendHealthy && (
+                <button
+                  type="button"
+                  onClick={onSignup}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#ff5045] to-[#ff2d20] px-6 py-3.5 text-sm font-bold uppercase tracking-wider text-white transition-all hover:shadow-xl hover:shadow-[#ff5045]/20 hover:-translate-y-0.5"
+                >
+                  {t('landing.hero_btn_start')}
+                  <ArrowRight size={18} />
+                </button>
+              )}
               <a
                 href={REPO_URL}
                 target="_blank"
@@ -218,9 +189,9 @@ export default function LandingPage({ onLogin, onSignup }: LandingPageProps) {
             </div>
 
             <div className="mt-8 grid max-w-xl grid-cols-3 gap-3 text-xs text-[#888]">
-              <span className="flex items-center gap-2"><Check size={15} className="text-[#66bb6a]" /> Self-hosted</span>
-              <span className="flex items-center gap-2"><Check size={15} className="text-[#66bb6a]" /> Feito para YouTube</span>
-              <span className="flex items-center gap-2"><Check size={15} className="text-[#66bb6a]" /> 100% gratuito</span>
+              <span className="flex items-center gap-2"><Check size={15} className="text-[#66bb6a]" /> {t("landing.hero_checklist_self_hosted")}</span>
+              <span className="flex items-center gap-2"><Check size={15} className="text-[#66bb6a]" /> {t("landing.hero_checklist_youtube")}</span>
+              <span className="flex items-center gap-2"><Check size={15} className="text-[#66bb6a]" /> {t("landing.hero_checklist_free")}</span>
             </div>
           </div>
 
@@ -232,15 +203,15 @@ export default function LandingPage({ onLogin, onSignup }: LandingPageProps) {
                 <span className="h-2.5 w-2.5 rounded-full bg-[#ff5045]" />
                 <span className="h-2.5 w-2.5 rounded-full bg-[#ffb74d]" />
                 <span className="h-2.5 w-2.5 rounded-full bg-[#66bb6a]" />
-                <span className="ml-3 text-[10px] uppercase tracking-widest text-[#555]">Workspace do vídeo</span>
+                <span className="ml-3 text-[10px] uppercase tracking-widest text-[#555]">{t("landing.mockup_workspace")}</span>
               </div>
 
               <div className="grid min-h-[430px] grid-cols-[92px_1fr] md:grid-cols-[150px_1fr]">
                 <aside className="border-r border-white/8 bg-[#131313] p-3">
-                  {["Ideias", "Roteiro", "Notas", "Teleprompter"].map((item, index) => (
+                  {["mockup_ideas", "mockup_script", "mockup_notes", "mockup_teleprompter"].map((item, index) => (
                     <div key={item} className={`mb-2 flex items-center gap-2 rounded-lg px-2 py-2 text-[11px] transition-colors ${index === 1 ? "bg-[#ff5045] text-white" : "text-[#666]"}`}>
                       <span className="h-2 w-2 rounded-full bg-current" />
-                      <span className="hidden md:inline">{item}</span>
+                      <span className="hidden md:inline">{t(`landing.${item}`)}</span>
                     </div>
                   ))}
                 </aside>
@@ -249,32 +220,32 @@ export default function LandingPage({ onLogin, onSignup }: LandingPageProps) {
                   <div className="mb-5 flex items-start justify-between gap-4">
                     <div>
                       <span className="mb-2 inline-flex items-center gap-1 bg-[#ff5045]/10 px-2 py-1 rounded text-[10px] font-semibold uppercase tracking-wider text-[#ff5045]">
-                        Em progresso
+                        {t("landing.mockup_in_progress")}
                       </span>
-                      <h2 className="text-lg font-semibold text-white md:text-2xl">Como gravar vídeos com mais ritmo</h2>
+                      <h2 className="text-lg font-semibold text-white md:text-2xl">{t("landing.mockup_video_title")}</h2>
                     </div>
                     <BarChart3 className="text-[#ff5045]" size={28} />
                   </div>
 
                   <div className="space-y-3">
                     <div className="rounded-lg border-l-4 border-[#ff5045] bg-[#1a1010] p-4">
-                      <span className="mb-2 inline-block rounded bg-[#ff5045] px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-white">Gancho</span>
-                      <p className="text-sm text-[#f1f1f1]">Pare de abrir o editor sem saber qual vídeo vem depois.</p>
+                      <span className="mb-2 inline-block rounded bg-[#ff5045] px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-white">{t("landing.mockup_hook")}</span>
+                      <p className="text-sm text-[#f1f1f1]">{t("landing.mockup_hook_text")}</p>
                     </div>
                     <div className="rounded-lg border-l-4 border-[#3ea6ff] bg-[#101820] p-4">
-                      <span className="mb-2 inline-block rounded bg-[#2563eb] px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-white">Conteúdo</span>
-                      <p className="text-sm text-[#dbeafe]">Referências, roteiro e observações ficam conectados a cada ideia.</p>
+                      <span className="mb-2 inline-block rounded bg-[#2563eb] px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-white">{t("landing.mockup_content")}</span>
+                      <p className="text-sm text-[#dbeafe]">{t("landing.mockup_content_text")}</p>
                     </div>
                     <div className="grid grid-cols-2 gap-3 pt-2">
                       <div className="rounded-lg border border-white/8 bg-white/[0.03] p-3">
                         <Video size={18} className="mb-2 text-[#ffb74d]" />
-                        <p className="text-[11px] uppercase tracking-wider text-[#888]">Duração estimada</p>
+                        <p className="text-[11px] uppercase tracking-wider text-[#888]">{t("landing.mockup_est_duration")}</p>
                         <strong className="text-xl text-white">6:40</strong>
                       </div>
                       <div className="rounded-lg border border-white/8 bg-white/[0.03] p-3">
                         <Clapperboard size={18} className="mb-2 text-[#66bb6a]" />
-                        <p className="text-[11px] uppercase tracking-wider text-[#888]">Status</p>
-                        <strong className="text-xl text-white">Roteiro</strong>
+                        <p className="text-[11px] uppercase tracking-wider text-[#888]">{t("landing.mockup_status")}</p>
+                        <strong className="text-xl text-white">{t("landing.mockup_script")}</strong>
                       </div>
                     </div>
                   </div>
@@ -289,18 +260,17 @@ export default function LandingPage({ onLogin, onSignup }: LandingPageProps) {
       <section id="problemas" className="border-y border-white/5 bg-[#080808]">
         <div className="mx-auto max-w-7xl px-5 py-20 md:px-8">
           <div className="mb-12 text-center max-w-3xl mx-auto">
-            <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#ff5045]">O Problema</span>
+            <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#ff5045]">{t("landing.problems_label")}</span>
             <h2 className="mt-3 text-3xl font-bold text-white md:text-4xl">
-              O que criadores de conteúdo enfrentam todo dia
+              {t("landing.problems_title")}
             </h2>
             <p className="mt-4 text-sm leading-7 text-[#888] max-w-2xl mx-auto">
-              Produzir vídeos com consistência é difícil quando suas ferramentas não conversam entre si. 
-              O CreatorsDeck resolve cada um desses problemas em uma única interface.
+              {t("landing.problems_desc")}
             </p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {problems.map(({ problem, solution }, index) => (
+            {problems.map(({ problemKey, solutionKey }, index) => (
               <article
                 key={index}
                 className="group relative overflow-hidden rounded-xl border border-white/8 bg-[#111] p-6 transition-all duration-300 hover:border-[#ff5045]/30 hover:bg-[#141414]"
@@ -310,7 +280,7 @@ export default function LandingPage({ onLogin, onSignup }: LandingPageProps) {
                   <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-red-950/50 text-[#ff5045]">
                     <X size={12} strokeWidth={3} />
                   </span>
-                  <p className="text-sm font-medium text-[#ccc] leading-snug">{problem}</p>
+                  <p className="text-sm font-medium text-[#ccc] leading-snug">{t(`landing.${problemKey}`)}</p>
                 </div>
                 {/* Divider */}
                 <div className="relative my-4">
@@ -326,7 +296,7 @@ export default function LandingPage({ onLogin, onSignup }: LandingPageProps) {
                   <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-950/50 text-[#66bb6a]">
                     <Check size={12} strokeWidth={3} />
                   </span>
-                  <p className="text-sm text-[#999] leading-snug">{solution}</p>
+                  <p className="text-sm text-[#999] leading-snug">{t(`landing.${solutionKey}`)}</p>
                 </div>
               </article>
             ))}
@@ -337,21 +307,21 @@ export default function LandingPage({ onLogin, onSignup }: LandingPageProps) {
       {/* ─── FEATURES ─── */}
       <section id="recursos" className="mx-auto max-w-7xl px-5 py-20 md:px-8">
         <div className="mb-10 max-w-2xl">
-          <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#ff5045]">Recursos</span>
-          <h2 className="mt-3 text-3xl font-bold text-white md:text-4xl">Tudo o que você precisa antes de publicar</h2>
+          <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#ff5045]">{t("landing.features_label")}</span>
+          <h2 className="mt-3 text-3xl font-bold text-white md:text-4xl">{t("landing.features_title")}</h2>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {features.map(({ icon: Icon, title, text }) => (
+          {features.map(({ icon: Icon, titleKey, textKey }) => (
             <article
-              key={title}
+              key={titleKey}
               className="group rounded-xl border border-white/8 bg-[#111] p-6 transition-all duration-300 hover:border-[#ff5045]/20 hover:shadow-lg hover:shadow-[#ff5045]/5"
             >
               <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-[#ff5045]/10 transition-colors group-hover:bg-[#ff5045]/20">
                 <Icon className="text-[#ff5045]" size={24} />
               </div>
-              <h3 className="mb-3 text-base font-semibold text-white">{title}</h3>
-              <p className="text-sm leading-6 text-[#888]">{text}</p>
+              <h3 className="mb-3 text-base font-semibold text-white">{t(`landing.${titleKey}`)}</h3>
+              <p className="text-sm leading-6 text-[#888]">{t(`landing.${textKey}`)}</p>
             </article>
           ))}
         </div>
@@ -362,10 +332,10 @@ export default function LandingPage({ onLogin, onSignup }: LandingPageProps) {
         <div className="mx-auto max-w-7xl px-5 py-20 md:px-8">
           <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
             <div>
-              <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#ff5045]">Fluxo</span>
-              <h2 className="mt-3 text-3xl font-bold text-white md:text-4xl">Um processo simples para publicar com frequência</h2>
+              <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#ff5045]">{t("landing.workflow_label")}</span>
+              <h2 className="mt-3 text-3xl font-bold text-white md:text-4xl">{t("landing.workflow_title")}</h2>
               <p className="mt-5 text-sm leading-7 text-[#888]">
-                Em vez de recomeçar do zero a cada vídeo, você acompanha a evolução da pauta e mantém tudo no mesmo workspace.
+                {t("landing.workflow_desc")}
               </p>
             </div>
 
@@ -375,7 +345,7 @@ export default function LandingPage({ onLogin, onSignup }: LandingPageProps) {
                   <span className="mb-5 flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#ff5045] to-[#ff2d20] text-xs font-bold text-white shadow-md shadow-[#ff5045]/20">
                     {index + 1}
                   </span>
-                  <p className="text-sm font-semibold text-white">{step}</p>
+                  <p className="text-sm font-semibold text-white">{t(`landing.${step}`)}</p>
                 </div>
               ))}
             </div>
@@ -393,20 +363,18 @@ export default function LandingPage({ onLogin, onSignup }: LandingPageProps) {
           <div className="relative p-8 md:p-14 text-center">
             <div className="mb-6 inline-flex items-center gap-2 border border-[#ff5045]/20 bg-[#ff5045]/10 px-4 py-2 rounded-full text-[11px] font-semibold uppercase tracking-widest text-[#ff5045]">
               <Code2 size={14} />
-              Projeto Open Source
+              {t("landing.os_label")}
             </div>
 
             <h2 className="text-3xl font-bold text-white md:text-5xl max-w-3xl mx-auto leading-tight">
-              Construído pela comunidade,{" "}
+              {t("landing.os_title_1")}
               <span className="bg-gradient-to-r from-[#ff5045] to-[#ff8a65] bg-clip-text text-transparent">
-                para criadores
+                {t("landing.os_title_2")}
               </span>
             </h2>
 
             <p className="mt-5 text-base leading-7 text-[#999] max-w-2xl mx-auto">
-              O CreatorsDeck é 100% open source. Você pode rodar no seu próprio servidor, 
-              adaptá-lo ao seu fluxo e contribuir com novas funcionalidades. 
-              Sem assinaturas, sem limites, sem pegadinhas.
+              {t("landing.os_desc")}
             </p>
 
             {/* Tech Stack pills */}
@@ -430,32 +398,34 @@ export default function LandingPage({ onLogin, onSignup }: LandingPageProps) {
                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-white text-[#0a0a0a] px-7 py-3.5 text-sm font-bold uppercase tracking-wider transition-all hover:shadow-xl hover:shadow-white/10 hover:-translate-y-0.5"
               >
                 <Github size={18} />
-                Acessar repositório
+                {t("landing.os_btn_repo")}
                 <ExternalLink size={14} />
               </a>
-              <button
-                type="button"
-                onClick={onSignup}
-                className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#ff5045]/50 bg-[#ff5045]/10 px-7 py-3.5 text-sm font-bold uppercase tracking-wider text-[#ff5045] transition-all hover:bg-[#ff5045]/20"
-              >
-                Usar agora
-                <ArrowRight size={18} />
-              </button>
+              {isBackendHealthy && (
+                <button
+                  type="button"
+                  onClick={onSignup}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#ff5045]/50 bg-[#ff5045]/10 px-7 py-3.5 text-sm font-bold uppercase tracking-wider text-[#ff5045] transition-all hover:bg-[#ff5045]/20"
+                >
+                  {t("landing.os_btn_use")}
+                  <ArrowRight size={18} />
+                </button>
+              )}
             </div>
 
             {/* Repo stats callout */}
             <div className="mt-10 flex flex-wrap justify-center gap-6 text-xs text-[#888]">
               <span className="flex items-center gap-1.5">
                 <Star size={14} className="text-[#ffb74d]" />
-                Dê uma estrela no GitHub para apoiar o projeto
+                {t("landing.os_stat_1")}
               </span>
               <span className="flex items-center gap-1.5">
                 <GitFork size={14} className="text-[#66bb6a]" />
-                Faça um fork e contribua com PRs
+                {t("landing.os_stat_2")}
               </span>
               <span className="flex items-center gap-1.5">
                 <Code2 size={14} className="text-[#3ea6ff]" />
-                MIT License
+                {t("landing.os_stat_3")}
               </span>
             </div>
           </div>
@@ -485,7 +455,7 @@ export default function LandingPage({ onLogin, onSignup }: LandingPageProps) {
                 GitHub
               </a>
               <span className="text-[#333]">•</span>
-              <span>Open Source — MIT License</span>
+              <span>Open Source — {t("landing.os_stat_3")}</span>
             </div>
           </div>
         </div>
